@@ -10,7 +10,7 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :aelia, AeliaWeb.Endpoint,
-  url: [host: "localhost", port: 4200],
+  url: [host: "localhost", path: "/aelia", port: 4200],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Do not print debug messages in production
