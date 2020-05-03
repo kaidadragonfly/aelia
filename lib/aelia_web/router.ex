@@ -16,6 +16,12 @@ defmodule AeliaWeb.Router do
   scope "/", AeliaWeb do
     pipe_through :browser
 
+    get "/", RedirectController, :to_aelia
+  end
+
+  scope "/aelia", AeliaWeb do
+    pipe_through :browser
+
     get "/", PageController, :index
   end
 
