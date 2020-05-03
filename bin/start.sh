@@ -5,4 +5,4 @@ ROOT_DIR="$BIN_DIR/.."
 cd "$ROOT_DIR" || exit 1
 
 source .env
-elixir --erl "-detached" -S mix phx.server
+mix phx.server
