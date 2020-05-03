@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-. .env                          # Source .env
+source .env
 elixir --erl "-detached" -S mix phx.server
