@@ -14,7 +14,7 @@ defmodule Aelia.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Aelia.PubSub},
       # Start the Endpoint (http/https)
-      AeliaWeb.Endpoint
+      AeliaWeb.Endpoint,
       # Start a worker by calling: Aelia.Worker.start_link(arg)
       # {Aelia.Worker, arg}
     ]
