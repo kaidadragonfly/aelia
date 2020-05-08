@@ -1,8 +1,11 @@
 defmodule Aelia.DeviantArt do
-  def parse_body(resp) do
-    case resp do
+  def get(url, params, sleep \\ 100) do
+    case HTTPoison.get(url, [], params: params) do
+      {:ok, %HTTPoison.Response{status_code: 429}} ->
+        Process.sleep(sleep)
+        get(url, params, 2 * sleep)
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        Jason.decode!(body)
+        {:ok, Jason.decode!(body)}
       {:ok, %HTTPoison.Response{status_code: 400, body: body}} ->
         {:error, "Bad Request: #{body}"}
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
@@ -12,7 +15,27 @@ defmodule Aelia.DeviantArt do
     end
   end
 
-  def token_auth do
+  def fetch_results(url, params, offset \\ 0) do
+    params = Map.put(params, :offset, offset)
+
+    case get(url, params) do
+      {:ok, %{
+          "has_more" => true,
+          "next_offset" => next_offset,
+          "results" => results
+       }} ->
+        case fetch_results(url, params, next_offset) do
+          {:ok, next_results} -> {:ok, results ++ next_results}
+          error -> error
+        end
+      {:ok, %{"has_more" => false, "results" => results}} ->
+        {:ok, results}
+      error ->
+        {:error, error}
+    end
+  end
+
+  def token_auth() do
     url = "https://www.deviantart.com/oauth2/token"
     params = %{
       grant_type: "client_credentials",
@@ -20,49 +43,80 @@ defmodule Aelia.DeviantArt do
       client_secret: System.get_env("CLIENT_SECRET")
     }
 
-    case parse_body(HTTPoison.get(url, [], params: params)) do
-      %{"status" => "success", "access_token" => token} ->
+    case get(url, params) do
+      {:ok, %{"status" => "success", "access_token" => token}} ->
         {:ok, token}
-      error ->
-        {:error, error}
+      error -> error
     end
-  end
-
-  def fetch_folders({:ok, token}, username) do
-    fetch_folders(token, username, 0)
   end
 
   def fetch_folders(error), do: error
 
-  def fetch_folders(token, username, offset) do
-    Process.sleep(100)
+  def fetch_folders(token, username) do
     url = "https://www.deviantart.com/api/v1/oauth2/gallery/folders"
     params = %{
       username: username,
       access_token: token,
-      offset: offset,
-      # ext_preload: true,
       mature_content: true
     }
 
-    case parse_body(HTTPoison.get(url, [], params: params)) do
-      %{
-        "has_more" => true,
-        "next_offset" => next_offset,
-        "results" => results
-      } ->
-        case fetch_folders(token, username, next_offset) do
-          {:ok, next_results} -> {:ok, results ++ next_results}
-          error -> error
-        end
-      %{"has_more" => false, "results" => results} ->
-        {:ok, results}
-      error ->
-        {:error, error}
-    end
+    fetch_results(url, params)
   end
 
   def folders(username) do
-    folders = token_auth |> fetch_folders(username)
+    {:ok, token} = token_auth()
+
+    folders =
+      case fetch_folders(token, username) do
+        {:ok, [%{"name" => "Featured", "parent" => nil}|folders]} -> folders
+        {:ok, folders} -> folders
+      end
+
+    {:ok, Enum.map(folders, &(fetch_folder(token, username, &1)))}
+  end
+
+  def fetch_folder(token, username, %{"folderid" => folder_id}) do
+    url =  "https://www.deviantart.com/api/v1/oauth2/gallery/#{folder_id}"
+    params = %{
+      mode: "newest",
+      username: username,
+      limit: 24,
+      access_token: token,
+      mature_content: true
+    }
+
+    fn() ->
+      {:ok, folder} =  fetch_results(url, params)
+
+      {:ok, Enum.map(folder, &parse_deviation/1)}
+    end
+  end
+
+  def parse_deviation(
+    %{
+      "deviationid" => id,
+      "title" => title,
+      "url" => page_url,
+      "is_downloadable" => true,
+      "is_deleted" => false,
+      "content" => %{"src" => file_url},
+      "thumbs" => thumbs
+    }) do
+
+    thumb_url = case Enum.find(thumbs,
+                      fn(%{"height" => h, "width" => w}) ->
+                        w == 100 || h == 100
+                      end) do
+                  %{"src" => url} -> url
+                  nil -> nil
+                end
+
+    %{
+      id: id,
+      title: title,
+      page_url: page_url,
+      file_url: file_url,
+      thumb_url: thumb_url
+    }
   end
 end
