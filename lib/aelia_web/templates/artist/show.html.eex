@@ -1,0 +1,13 @@
+<h2>Show Artist</h2>
+
+<ul>
+  <li>
+    <strong>Name:</strong>
+    <%= @artist.username %>
+  </li>
+
+  <li>
+    <strong>Id:</strong>
+    <%= @artist.id %>
+  </li>
+</ul>

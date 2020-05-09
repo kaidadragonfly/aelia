@@ -1,4 +1,6 @@
-defmodule Aelia.DeviantArt do
+defmodule Aelia.DeviantArt.Api do
+  @base_url "https://www.deviantart.com/api/v1/oauth2"
+
   def get(url, params, sleep \\ 100) do
     case HTTPoison.get(url, [], params: params) do
       {:ok, %HTTPoison.Response{status_code: 429}} ->
@@ -53,7 +55,7 @@ defmodule Aelia.DeviantArt do
   def fetch_folders(error), do: error
 
   def fetch_folders(token, username) do
-    url = "https://www.deviantart.com/api/v1/oauth2/gallery/folders"
+    url = "#{@base_url}/gallery/folders"
     params = %{
       username: username,
       access_token: token,
@@ -76,11 +78,11 @@ defmodule Aelia.DeviantArt do
   end
 
   def fetch_folder(token, username,
-    params = %{
+    %{
       "folderid" => folder_id,
       "name" => name
     }) do
-    url =  "https://www.deviantart.com/api/v1/oauth2/gallery/#{folder_id}"
+    url = "#{@base_url}/gallery/#{folder_id}"
     params = %{
       mode: "newest",
       username: username,
@@ -131,5 +133,37 @@ defmodule Aelia.DeviantArt do
 
   def parse_deviation(%{"deviationid" => id}) do
     %{id: id}
+  end
+
+  def artist_info(username) do
+    {:ok, token} = token_auth()
+
+    url = "#{@base_url}/user/profile/#{username}"
+    params = %{
+      username: username,
+      access_token: token,
+      ext_collections: false,
+      ext_galleries: false,
+      mature_content: true
+    }
+
+    case get(url, params) do
+      {:ok,
+       resp = %{
+         "user" => %{"usericon" => icon_url, "userid" => id},
+         "profile_url" => profile_url,
+         "real_name" => name
+       }
+      } ->
+        {:ok,
+         %{
+           id: id,
+           name: name,
+           username: username,
+           profile_url: profile_url,
+           icon_url: icon_url}}
+      error ->
+        {:error, error}
+    end
   end
 end

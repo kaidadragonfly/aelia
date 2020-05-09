@@ -1,8 +1,9 @@
 defmodule AeliaWeb.PageController do
   use AeliaWeb, :controller
+  alias Aelia.DeviantArt.Api
 
   def search(conn, %{"user" => %{"name" => username}}) do
-    {:ok, folders} = Aelia.DeviantArt.folders(username)
+    {:ok, folders} = Api.folders(username)
 
     render(conn, "search.html", folders: folders)
   end
