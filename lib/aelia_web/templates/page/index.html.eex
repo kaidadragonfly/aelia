@@ -1,12 +1,4 @@
-<ul>
-  <%= for folder <- @folders do %>
-      <li>
-        <%= folder.name %>
-        <ol>
-          <%= for work <- folder.contents.() do %>
-              <li><%= link(work.title, to: work.file_url) %></li>
-              <% end %>
-        </ol>
-      </li>
-      <% end %>
-</ul>
+<%= form_for :user, Routes.page_path(AeliaWeb.Endpoint, :search), [{:method, "get"}], fn f -> %>
+  <%= text_input f, :name %>
+  <%= submit "Search" %>
+<% end %>

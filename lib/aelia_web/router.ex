@@ -17,6 +17,7 @@ defmodule AeliaWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+    get "/search", PageController, :search
   end
 
   # Other scopes may use custom stacks.

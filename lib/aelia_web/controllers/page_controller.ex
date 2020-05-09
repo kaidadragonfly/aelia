@@ -1,9 +1,13 @@
 defmodule AeliaWeb.PageController do
   use AeliaWeb, :controller
 
-  def index(conn, _params) do
-    {:ok, folders} = Aelia.DeviantArt.folders("team")
+  def search(conn, %{"user" => %{"name" => username}}) do
+    {:ok, folders} = Aelia.DeviantArt.folders(username)
 
-    render(conn, "index.html", folders: folders)
+    render(conn, "search.html", folders: folders)
+  end
+
+  def index(conn, _params) do
+    render(conn, "index.html")
   end
 end
