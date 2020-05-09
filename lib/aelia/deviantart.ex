@@ -75,7 +75,11 @@ defmodule Aelia.DeviantArt do
     {:ok, Enum.map(folders, &(fetch_folder(token, username, &1)))}
   end
 
-  def fetch_folder(token, username, %{"folderid" => folder_id}) do
+  def fetch_folder(token, username,
+    params = %{
+      "folderid" => folder_id,
+      "name" => name
+    }) do
     url =  "https://www.deviantart.com/api/v1/oauth2/gallery/#{folder_id}"
     params = %{
       mode: "newest",
@@ -85,11 +89,16 @@ defmodule Aelia.DeviantArt do
       mature_content: true
     }
 
-    fn() ->
-      {:ok, folder} =  fetch_results(url, params)
+    %{
+      name: name,
+      contents: fn() ->
+        {:ok, contents} = fetch_results(url, params)
 
-      {:ok, Enum.map(folder, &parse_deviation/1)}
-    end
+        contents
+        |> Enum.map(&parse_deviation/1)
+        |> Enum.filter(&(Map.get(&1, :file_url)))
+      end
+    }
   end
 
   def parse_deviation(
@@ -118,5 +127,9 @@ defmodule Aelia.DeviantArt do
       file_url: file_url,
       thumb_url: thumb_url
     }
+  end
+
+  def parse_deviation(%{"deviationid" => id}) do
+    %{id: id}
   end
 end

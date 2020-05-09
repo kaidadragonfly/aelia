@@ -2,11 +2,8 @@ defmodule AeliaWeb.PageController do
   use AeliaWeb, :controller
 
   def index(conn, _params) do
-    username = "team"
-    {:ok, folders} = Aelia.DeviantArt.folders(username)
+    {:ok, folders} = Aelia.DeviantArt.folders("team")
 
-    IO.inspect(Enum.at(folders, 2).())
-
-    render(conn, "index.html")
+    render(conn, "index.html", folders: folders)
   end
 end
