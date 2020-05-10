@@ -1,4 +1,4 @@
-defmodule Aelia.Folders.Folder do
+defmodule Aelia.DeviantArt.Folder do
   use Ecto.Schema
   import Ecto.Changeset
 

@@ -1,6 +1,6 @@
 defmodule Aelia.DeviantArt do
-  alias Aelia.Artists
-  alias Aelia.Artists.Artist
+  alias Aelia.Repo
+  alias Aelia.DeviantArt.Artist
 
   @base_url "https://www.deviantart.com/api/v1/oauth2"
 
@@ -12,7 +12,7 @@ defmodule Aelia.DeviantArt do
       client_secret: System.get_env("CLIENT_SECRET")
     }
 
-    case get(url, params) do
+    case fetch(url, params) do
       {:ok, %{"status" => "success", "access_token" => token}} ->
         {:ok, token}
       error -> error
@@ -32,57 +32,17 @@ defmodule Aelia.DeviantArt do
   end
 
   def artist_info(username) do
-    case Artists.get_artist_by_username(username) do
-      nil ->
-        {:ok, token} = token_auth()
-
-        url = "#{@base_url}/user/profile/#{username}"
-        params = %{
-          username: username,
-          access_token: token,
-          ext_collections: false,
-          ext_galleries: false,
-          mature_content: true
-        }
-
-        case get(url, params) do
-          {:ok,
-           %{
-             "user" => %{"usericon" => icon_url, "userid" => id},
-             "profile_url" => profile_url,
-             "real_name" => name}} ->
-            artist =
-              %{
-                id: id,
-                name: name,
-                username: username,
-                profile_url: profile_url,
-                icon_url: icon_url
-              }
-            Artists.create_artist(artist)
-          {:error, message} ->
-            case Regex.named_captures(~r/Bad Request: (?<json>.*)/, message) do
-              %{"json" => json} ->
-                {:error,
-                 Jason.decode!(json)
-                 |> Map.get("error_description")
-                 |> String.capitalize
-                }
-              nil ->
-                {:error, message}
-            end
-
-          error = {:error, _} -> error
-        end
+    case Repo.get_by(Artist, username: username) do
+      nil -> fetch_artist_info(username)
       %Artist{} = artist -> {:ok, artist}
     end
   end
 
-  defp get(url, params, sleep \\ 100) do
+  defp fetch(url, params, sleep \\ 100) do
     case HTTPoison.get(url, [], params: params) do
       {:ok, %HTTPoison.Response{status_code: 429}} ->
         Process.sleep(sleep)
-        get(url, params, 2 * sleep)
+        fetch(url, params, 2 * sleep)
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, Jason.decode!(body)}
       {:ok, %HTTPoison.Response{status_code: 400, body: body}} ->
@@ -97,7 +57,7 @@ defmodule Aelia.DeviantArt do
   defp fetch_results(url, params, offset \\ 0) do
     params = Map.put(params, :offset, offset)
 
-    case get(url, params) do
+    case fetch(url, params) do
       {:ok, %{
           "has_more" => true,
           "next_offset" => next_offset,
@@ -111,6 +71,51 @@ defmodule Aelia.DeviantArt do
         {:ok, results}
       error ->
         {:error, error}
+    end
+  end
+
+  defp fetch_artist_info(username) do
+    {:ok, token} = token_auth()
+
+    url = "#{@base_url}/user/profile/#{username}"
+    params = %{
+      username: username,
+      access_token: token,
+      ext_collections: false,
+      ext_galleries: false,
+      mature_content: true
+    }
+
+    case fetch(url, params) do
+      {:ok,
+       %{
+         "user" => %{"usericon" => icon_url, "userid" => id},
+         "profile_url" => profile_url,
+         "real_name" => name}} ->
+        Repo.insert(
+          %Artist{
+            id: id,
+            name: name,
+            username: username,
+            profile_url: profile_url,
+            icon_url: icon_url
+          },
+          on_conflict: :replace_all,
+          conflict_target: :username
+        )
+      {:error, message} ->
+        case Regex.named_captures(~r/Bad Request: (?<json>.*)/, message) do
+          %{"json" => json} ->
+            {:error,
+             Jason.decode!(json)
+             |> Map.get("error_description")
+             |> String.capitalize
+            }
+          nil ->
+            {:error, message}
+        end
+
+      error = {:error, _} -> error
     end
   end
 
