@@ -1,4 +1,4 @@
-defmodule Aelia.DeviantArt.Artist do
+defmodule Aelia.Artists.Artist do
   use Ecto.Schema
   import Ecto.Changeset
 

@@ -1,0 +1,18 @@
+<h1>Show Folder</h1>
+
+<ul>
+
+  <li>
+    <strong>Id:</strong>
+    <%= @folder.id %>
+  </li>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @folder.name %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.folder_path(@conn, :edit, @folder) %></span>
+<span><%= link "Back", to: Routes.folder_path(@conn, :index) %></span>

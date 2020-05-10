@@ -1,114 +1,188 @@
 defmodule Aelia.DeviantArt do
-  @moduledoc """
-  The DeviantArt context.
-  """
+  alias Aelia.Artists
+  alias Aelia.Artists.Artist
 
-  import Ecto.Query, warn: false
-  alias Aelia.Repo
+  @base_url "https://www.deviantart.com/api/v1/oauth2"
 
-  alias Aelia.DeviantArt.Artist
+  def token_auth() do
+    url = "https://www.deviantart.com/oauth2/token"
+    params = %{
+      grant_type: "client_credentials",
+      client_id: System.get_env("CLIENT_ID"),
+      client_secret: System.get_env("CLIENT_SECRET")
+    }
 
-  @doc """
-  Returns the list of artists.
-
-  ## Examples
-
-      iex> list_artists()
-      [%Artist{}, ...]
-
-  """
-  def list_artists do
-    Repo.all(Artist)
-  end
-
-  @doc """
-  Gets a single artist.
-
-  Raises `Ecto.NoResultsError` if the Artist does not exist.
-
-  ## Examples
-
-      iex> get_artist!(123)
-      %Artist{}
-
-      iex> get_artist!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_artist!(id), do: Repo.get!(Artist, id)
-
-  @doc """
-  Creates a artist if it doesn't exist, updates it otherwise
-  """
-  def create_or_update_artist(attrs \\ %{}) do
-    case Repo.get(Artist, attrs.id) do
-      nil -> create_artist(attrs)
-      artist -> update_artist(artist, attrs)
+    case get(url, params) do
+      {:ok, %{"status" => "success", "access_token" => token}} ->
+        {:ok, token}
+      error -> error
     end
   end
 
-  @doc """
-  Creates a artist.
+  def folders(username) do
+    {:ok, token} = token_auth()
 
-  ## Examples
+    folders =
+      case fetch_folders(token, username) do
+        {:ok, [%{"name" => "Featured", "parent" => nil}|folders]} -> folders
+        {:ok, folders} -> folders
+      end
 
-      iex> create_artist(%{field: value})
-      {:ok, %Artist{}}
-
-      iex> create_artist(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_artist(attrs \\ %{}) do
-    %Artist{}
-    |> Artist.changeset(attrs)
-    |> Repo.insert()
+    {:ok, Enum.map(folders, &(fetch_folder(token, username, &1)))}
   end
 
-  @doc """
-  Updates a artist.
+  def artist_info(username) do
+    case Artists.get_artist_by_username(username) do
+      nil ->
+        {:ok, token} = token_auth()
 
-  ## Examples
+        url = "#{@base_url}/user/profile/#{username}"
+        params = %{
+          username: username,
+          access_token: token,
+          ext_collections: false,
+          ext_galleries: false,
+          mature_content: true
+        }
 
-      iex> update_artist(artist, %{field: new_value})
-      {:ok, %Artist{}}
+        case get(url, params) do
+          {:ok,
+           %{
+             "user" => %{"usericon" => icon_url, "userid" => id},
+             "profile_url" => profile_url,
+             "real_name" => name}} ->
+            artist =
+              %{
+                id: id,
+                name: name,
+                username: username,
+                profile_url: profile_url,
+                icon_url: icon_url
+              }
+            Artists.create_artist(artist)
+          {:error, message} ->
+            case Regex.named_captures(~r/Bad Request: (?<json>.*)/, message) do
+              %{"json" => json} ->
+                {:error,
+                 Jason.decode!(json)
+                 |> Map.get("error_description")
+                 |> String.capitalize
+                }
+              nil ->
+                {:error, message}
+            end
 
-      iex> update_artist(artist, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_artist(%Artist{} = artist, attrs) do
-    artist
-    |> Artist.changeset(attrs)
-    |> Repo.update()
+          error = {:error, _} -> error
+        end
+      %Artist{} = artist -> {:ok, artist}
+    end
   end
 
-  @doc """
-  Deletes a artist.
-
-  ## Examples
-
-      iex> delete_artist(artist)
-      {:ok, %Artist{}}
-
-      iex> delete_artist(artist)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_artist(%Artist{} = artist) do
-    Repo.delete(artist)
+  defp get(url, params, sleep \\ 100) do
+    case HTTPoison.get(url, [], params: params) do
+      {:ok, %HTTPoison.Response{status_code: 429}} ->
+        Process.sleep(sleep)
+        get(url, params, 2 * sleep)
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, Jason.decode!(body)}
+      {:ok, %HTTPoison.Response{status_code: 400, body: body}} ->
+        {:error, "Bad Request: #{body}"}
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        {:error, "Unexpected error.  status: #{status} body: #{body}"}
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {:error, "Error: #{reason}"}
+    end
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking artist changes.
+  defp fetch_results(url, params, offset \\ 0) do
+    params = Map.put(params, :offset, offset)
 
-  ## Examples
+    case get(url, params) do
+      {:ok, %{
+          "has_more" => true,
+          "next_offset" => next_offset,
+          "results" => results
+       }} ->
+        case fetch_results(url, params, next_offset) do
+          {:ok, next_results} -> {:ok, results ++ next_results}
+          error -> error
+        end
+      {:ok, %{"has_more" => false, "results" => results}} ->
+        {:ok, results}
+      error ->
+        {:error, error}
+    end
+  end
 
-      iex> change_artist(artist)
-      %Ecto.Changeset{data: %Artist{}}
+  defp fetch_folders(error), do: error
 
-  """
-  def change_artist(%Artist{} = artist, attrs \\ %{}) do
-    Artist.changeset(artist, attrs)
+  defp fetch_folders(token, username) do
+    url = "#{@base_url}/gallery/folders"
+    params = %{
+      username: username,
+      access_token: token,
+      mature_content: true
+    }
+
+    fetch_results(url, params)
+  end
+
+  defp fetch_folder(token, username,
+    %{
+      "folderid" => folder_id,
+      "name" => name
+    }) do
+    url = "#{@base_url}/gallery/#{folder_id}"
+    params = %{
+      mode: "newest",
+      username: username,
+      limit: 24,
+      access_token: token,
+      mature_content: true
+    }
+
+    %{
+      id: folder_id,
+      name: name,
+      contents: fn() ->
+        {:ok, contents} = fetch_results(url, params)
+
+        contents
+        |> Enum.map(&parse_deviation/1)
+        |> Enum.filter(&(Map.get(&1, :file_url)))
+      end
+    }
+  end
+
+  defp parse_deviation(
+    %{
+      "deviationid" => id,
+      "title" => title,
+      "url" => page_url,
+      "is_downloadable" => true,
+      "is_deleted" => false,
+      "content" => %{"src" => file_url},
+      "thumbs" => thumbs
+    }) do
+
+    thumb_url = case Enum.find(thumbs,
+                      fn(%{"height" => h, "width" => w}) ->
+                        w == 100 || h == 100
+                      end) do
+                  %{"src" => url} -> url
+                  nil -> nil
+                end
+
+    %{
+      id: id,
+      title: title,
+      page_url: page_url,
+      file_url: file_url,
+      thumb_url: thumb_url
+    }
+  end
+
+  defp parse_deviation(%{"deviationid" => id}) do
+    %{id: id}
   end
 end
