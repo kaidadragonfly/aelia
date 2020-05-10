@@ -17,7 +17,7 @@ defmodule AeliaWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
-    resources "/artists", ArtistController, only: [:create, :show]
+    get "/artists", ArtistController, :show, as: "artist"
   end
 
   # Other scopes may use custom stacks.

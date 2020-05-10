@@ -1,7 +1,75 @@
 defmodule Aelia.DeviantArt.Api do
   @base_url "https://www.deviantart.com/api/v1/oauth2"
 
-  def get(url, params, sleep \\ 100) do
+  def token_auth() do
+    url = "https://www.deviantart.com/oauth2/token"
+    params = %{
+      grant_type: "client_credentials",
+      client_id: System.get_env("CLIENT_ID"),
+      client_secret: System.get_env("CLIENT_SECRET")
+    }
+
+    case get(url, params) do
+      {:ok, %{"status" => "success", "access_token" => token}} ->
+        {:ok, token}
+      error -> error
+    end
+  end
+
+  def folders(username) do
+    {:ok, token} = token_auth()
+
+    folders =
+      case fetch_folders(token, username) do
+        {:ok, [%{"name" => "Featured", "parent" => nil}|folders]} -> folders
+        {:ok, folders} -> folders
+      end
+
+    {:ok, Enum.map(folders, &(fetch_folder(token, username, &1)))}
+  end
+
+  def artist_info(username) do
+    {:ok, token} = token_auth()
+
+    url = "#{@base_url}/user/profile/#{username}"
+    params = %{
+      username: username,
+      access_token: token,
+      ext_collections: false,
+      ext_galleries: false,
+      mature_content: true
+    }
+
+    case get(url, params) do
+      {:ok,
+       %{
+         "user" => %{"usericon" => icon_url, "userid" => id},
+         "profile_url" => profile_url,
+         "real_name" => name}} ->
+        {:ok,
+         %{
+           id: id,
+           name: name,
+           username: username,
+           profile_url: profile_url,
+           icon_url: icon_url}}
+      {:error, message} ->
+        case Regex.named_captures(~r/Bad Request: (?<json>.*)/, message) do
+          %{"json" => json} ->
+            {:error,
+             Jason.decode!(json)
+             |> Map.get("error_description")
+             |> String.capitalize
+            }
+          nil ->
+            {:error, message}
+        end
+
+      error = {:error, _} -> error
+    end
+  end
+
+  defp get(url, params, sleep \\ 100) do
     case HTTPoison.get(url, [], params: params) do
       {:ok, %HTTPoison.Response{status_code: 429}} ->
         Process.sleep(sleep)
@@ -17,7 +85,7 @@ defmodule Aelia.DeviantArt.Api do
     end
   end
 
-  def fetch_results(url, params, offset \\ 0) do
+  defp fetch_results(url, params, offset \\ 0) do
     params = Map.put(params, :offset, offset)
 
     case get(url, params) do
@@ -37,24 +105,9 @@ defmodule Aelia.DeviantArt.Api do
     end
   end
 
-  def token_auth() do
-    url = "https://www.deviantart.com/oauth2/token"
-    params = %{
-      grant_type: "client_credentials",
-      client_id: System.get_env("CLIENT_ID"),
-      client_secret: System.get_env("CLIENT_SECRET")
-    }
+  defp fetch_folders(error), do: error
 
-    case get(url, params) do
-      {:ok, %{"status" => "success", "access_token" => token}} ->
-        {:ok, token}
-      error -> error
-    end
-  end
-
-  def fetch_folders(error), do: error
-
-  def fetch_folders(token, username) do
+  defp fetch_folders(token, username) do
     url = "#{@base_url}/gallery/folders"
     params = %{
       username: username,
@@ -65,19 +118,7 @@ defmodule Aelia.DeviantArt.Api do
     fetch_results(url, params)
   end
 
-  def folders(username) do
-    {:ok, token} = token_auth()
-
-    folders =
-      case fetch_folders(token, username) do
-        {:ok, [%{"name" => "Featured", "parent" => nil}|folders]} -> folders
-        {:ok, folders} -> folders
-      end
-
-    {:ok, Enum.map(folders, &(fetch_folder(token, username, &1)))}
-  end
-
-  def fetch_folder(token, username,
+  defp fetch_folder(token, username,
     %{
       "folderid" => folder_id,
       "name" => name
@@ -103,7 +144,7 @@ defmodule Aelia.DeviantArt.Api do
     }
   end
 
-  def parse_deviation(
+  defp parse_deviation(
     %{
       "deviationid" => id,
       "title" => title,
@@ -131,39 +172,7 @@ defmodule Aelia.DeviantArt.Api do
     }
   end
 
-  def parse_deviation(%{"deviationid" => id}) do
+  defp parse_deviation(%{"deviationid" => id}) do
     %{id: id}
-  end
-
-  def artist_info(username) do
-    {:ok, token} = token_auth()
-
-    url = "#{@base_url}/user/profile/#{username}"
-    params = %{
-      username: username,
-      access_token: token,
-      ext_collections: false,
-      ext_galleries: false,
-      mature_content: true
-    }
-
-    case get(url, params) do
-      {:ok,
-       resp = %{
-         "user" => %{"usericon" => icon_url, "userid" => id},
-         "profile_url" => profile_url,
-         "real_name" => name
-       }
-      } ->
-        {:ok,
-         %{
-           id: id,
-           name: name,
-           username: username,
-           profile_url: profile_url,
-           icon_url: icon_url}}
-      error ->
-        {:error, error}
-    end
   end
 end

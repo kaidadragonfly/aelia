@@ -2,12 +2,26 @@
 
 <ul>
   <li>
-    <strong>Name:</strong>
+    <strong>Username:</strong>
     <%= @artist.username %>
   </li>
 
   <li>
     <strong>Id:</strong>
     <%= @artist.id %>
+  </li>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @artist.name %>
+  </li>
+
+  <li>
+    <strong>Icon:</strong>
+    <img src="<%= @artist.icon_url%>" alt="Profile Photo" />
+  </li>
+
+  <li>
+    <strong><%= link "Profile Link", to: @artist.profile_url %></strong>
   </li>
 </ul>

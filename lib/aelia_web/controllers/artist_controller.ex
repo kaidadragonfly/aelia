@@ -4,26 +4,31 @@ defmodule AeliaWeb.ArtistController do
   alias Aelia.DeviantArt
   alias Aelia.DeviantArt.Api
 
-  def create(conn, %{"artist" => %{"name" => username}}) do
-    {:ok, artist_params} = Api.artist_info(username)
+  def show(conn, %{"username" => username}) do
+    conn |> process_artist(Api.artist_info(username))
+  end
 
+  defp process_artist(conn, {:ok, artist_params}) do
     case DeviantArt.create_or_update_artist(artist_params) do
       {:ok, artist} ->
         conn
         |> put_flash(:info, "Artist saved successfully.")
-        |> redirect(to: Routes.artist_path(conn, :show, artist))
+        |> render("show.html", artist: artist)
       {:error, %Ecto.Changeset{} = changeset} ->
         IO.inspect(artist_params)
         IO.inspect(changeset)
 
         conn
-        |> put_flash(:info, "Failed to create artist!")
+        |> put_flash(:info, "Failed to save artist!")
         |> redirect(to: Routes.page_path(conn, :index))
     end
   end
 
-  def show(conn, %{"id" => id}) do
-    artist = DeviantArt.get_artist!(id)
-    render(conn, "show.html", artist: artist)
+  defp process_artist(conn, {:error, error}) do
+    IO.inspect(error)
+
+    conn
+    |> put_flash(:info, error)
+    |> redirect(to: Routes.page_path(conn, :index))
   end
 end
