@@ -29,7 +29,10 @@
     Folders:
     <ul>
       <%= for folder <- @artist.folders do %>
-        <li><%= folder.name %> <%= folder.id %></li>
+        <li><%= 
+            link(
+              folder.name, 
+              to: Routes.folder_path(@conn, :show, folder.id)) %></li>
       <% end %>
     </ul>
   </li>

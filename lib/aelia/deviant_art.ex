@@ -1,6 +1,6 @@
 defmodule Aelia.DeviantArt do
   alias Aelia.Repo
-  alias Aelia.DeviantArt.{Artist, Folder}
+  alias Aelia.DeviantArt.{Artist, Folder, Work}
 
   @base_url "https://www.deviantart.com/api/v1/oauth2"
 
@@ -9,6 +9,10 @@ defmodule Aelia.DeviantArt do
       nil -> refresh_artist_info(username)
       %Artist{} = artist -> {:ok, Repo.preload(artist, :folders)}
     end
+  end
+
+  def folder(id) do
+    Repo.get!(Folder, id) |> Repo.preload(:artist) |> refresh_folder
   end
 
   defp token_auth() do
@@ -63,8 +67,6 @@ defmodule Aelia.DeviantArt do
   end
 
   defp refresh_artist_info(username) do
-    IO.puts "HERE!"
-
     {:ok, token} = token_auth()
 
     url = "#{@base_url}/user/profile/#{username}"
@@ -115,8 +117,6 @@ defmodule Aelia.DeviantArt do
   end
 
   defp refresh_folders(token, artist_id, username) do
-    IO.puts "HERE TOO!"
-
     url = "#{@base_url}/gallery/folders"
     params = %{
       username: username,
@@ -134,14 +134,12 @@ defmodule Aelia.DeviantArt do
     end)
   end
 
-  defp fetch_folder(
-    token,
-    username,
-    %{
-      "folderid" => folder_id,
-      "name" => name
-    }) do
-    url = "#{@base_url}/gallery/#{folder_id}"
+  defp refresh_folder(
+    folder = %Folder{id: id, name: name, artist: %Artist{username: username}}
+  ) do
+    {:ok, token} = token_auth()
+
+    url = "#{@base_url}/gallery/#{id}"
     params = %{
       mode: "newest",
       username: username,
@@ -150,17 +148,36 @@ defmodule Aelia.DeviantArt do
       mature_content: true
     }
 
-    %{
-      id: folder_id,
-      name: name,
-      contents: fn() ->
-        {:ok, contents} = fetch_results(url, params)
+    {:ok, contents} = fetch_results(url, params)
 
-        contents
-        |> Enum.map(&parse_work/1)
-        |> Enum.filter(&(Map.get(&1, :file_url)))
-      end
-    }
+    works = contents
+    |> Enum.map(&parse_work/1)
+    |> Enum.filter(&(Map.get(&1, :file_url)))
+
+    works |> Enum.with_index |> Enum.each(
+      fn {%{
+             id: work_id,
+             title: title,
+             page_url: page_url,
+             file_url: file_url,
+             thumb_url: thumb_url
+          },
+        index} ->
+          Repo.insert(
+            %Work{
+              id: work_id,
+              title: title,
+              page_url: page_url,
+              file_url: file_url,
+              thumb_url: thumb_url,
+              folder_id: id,
+              index: index
+            },
+            on_conflict: :replace_all,
+            conflict_target: :id)
+      end)
+
+    {:ok, Repo.preload(folder, :works)}
   end
 
   defp parse_work(
@@ -177,7 +194,7 @@ defmodule Aelia.DeviantArt do
     thumb_url = case Enum.find(thumbs,
                       fn(%{"height" => h, "width" => w}) ->
                         w == 100 || h == 100
-                      end) do
+                      end) || List.first(thumbs) do
                   %{"src" => url} -> url
                   nil -> nil
                 end

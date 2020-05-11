@@ -20,6 +20,9 @@ defmodule AeliaWeb.Router do
     post "/artists", ArtistController, :search, as: "artists_search"
     get "/artists", ArtistController, :index
     get "/artists/:username", ArtistController, :show, as: "artist"
+
+    resources "/folders", FolderController, only: [:show]
+    resources "/works", WorkController, only: [:show]
   end
 
   # Other scopes may use custom stacks.

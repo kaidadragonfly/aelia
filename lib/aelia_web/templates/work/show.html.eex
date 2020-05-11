@@ -1,0 +1,35 @@
+<h2>Show Work</h2>
+
+<ul>
+
+  <li>
+    <strong>Id:</strong>
+    <%= @work.id %>
+  </li>
+
+  <li>
+    <strong>Title:</strong>
+    <%= @work.title %>
+  </li>
+
+  <li>
+    <strong>Page url:</strong>
+    <%= @work.page_url %>
+  </li>
+
+  <li>
+    <strong>File url:</strong>
+    <%= @work.file_url %>
+  </li>
+
+  <li>
+    <strong>Thumb url:</strong>
+    <%= @work.thumb_url %>
+  </li>
+
+  <li>
+    <strong>Folder:</strong>
+    <%= @work.folder_id %>
+  </li>
+
+</ul>
