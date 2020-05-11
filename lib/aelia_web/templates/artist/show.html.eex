@@ -24,4 +24,13 @@
   <li>
     <strong><%= link "Profile Link", to: @artist.profile_url %></strong>
   </li>
+
+  <li>
+    Folders:
+    <ul>
+      <%= for folder <- @artist.folders do %>
+        <li><%= folder.name %> <%= folder.id %></li>
+      <% end %>
+    </ul>
+  </li>
 </ul>

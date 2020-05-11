@@ -3,25 +3,25 @@ defmodule AeliaWeb.ArtistController do
 
   alias Aelia.DeviantArt
 
-  def show(conn, %{"username" => username}) do
+  def index(conn, _params) do
+    redirect(conn, to: Routes.page_path(conn, :index))
+  end
 
+  def search(conn, %{"username" => username}) do
+    # TODO: Handle not_found here. Display a search box.
+    redirect(conn, to: Routes.artist_path(conn, :show, username))
+  end
+
+  def show(conn, %{"username" => username}) do
     case DeviantArt.artist_info(username) do
       {:ok, artist} ->
         conn
         |> put_flash(:info, "Artist saved successfully.")
         |> render("show.html", artist: artist)
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, %Ecto.Changeset{}} ->
         conn
         |> put_flash(:info, "Failed save artist #{username}!")
         |> redirect(to: Routes.page_path(conn, :index))
     end
-  end
-
-  defp process_artist(conn, {:error, error}) do
-    IO.inspect(error)
-
-    conn
-    |> put_flash(:info, error)
-    |> redirect(to: Routes.page_path(conn, :index))
   end
 end

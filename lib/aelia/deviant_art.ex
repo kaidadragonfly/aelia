@@ -34,7 +34,7 @@ defmodule Aelia.DeviantArt do
   def artist_info(username) do
     case Repo.get(Artist, username) do
       nil -> fetch_artist_info(username)
-      %Artist{} = artist -> {:ok, artist}
+      %Artist{} = artist -> {:ok, Repo.preload(artist, :folders)}
     end
   end
 
@@ -114,7 +114,7 @@ defmodule Aelia.DeviantArt do
               conflict_target: :id)
           end)
 
-          artist
+          Repo.preload(artist, :folders)
         end)
       {:error, message} ->
         case Regex.named_captures(~r/Bad Request: (?<json>.*)/, message) do

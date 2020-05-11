@@ -1,4 +1,4 @@
-<form action="<%= Routes.artist_path(@conn, :show) %>">
-  <input type="text" name="username"></input>
+<%= form_for @conn, Routes.artists_search_path(@conn, :search), fn f -> %>
+  <%= text_input f, :username %>
   <%= submit "Add Artist" %>
-</form>
+<% end %>
