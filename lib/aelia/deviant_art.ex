@@ -1,6 +1,6 @@
 defmodule Aelia.DeviantArt do
   alias Aelia.Repo
-  alias Aelia.DeviantArt.Artist
+  alias Aelia.DeviantArt.{Artist, Folder}
 
   @base_url "https://www.deviantart.com/api/v1/oauth2"
 
@@ -32,7 +32,7 @@ defmodule Aelia.DeviantArt do
   end
 
   def artist_info(username) do
-    case Repo.get_by(Artist, username: username) do
+    case Repo.get(Artist, username) do
       nil -> fetch_artist_info(username)
       %Artist{} = artist -> {:ok, artist}
     end
@@ -82,27 +82,40 @@ defmodule Aelia.DeviantArt do
       username: username,
       access_token: token,
       ext_collections: false,
-      ext_galleries: false,
+      ext_galleries: true,
       mature_content: true
     }
 
     case fetch(url, params) do
       {:ok,
        %{
-         "user" => %{"usericon" => icon_url, "userid" => id},
+         "user" => %{"usericon" => icon_url, "userid" => artist_id},
          "profile_url" => profile_url,
-         "real_name" => name}} ->
-        Repo.insert(
-          %Artist{
-            id: id,
-            name: name,
-            username: username,
-            profile_url: profile_url,
-            icon_url: icon_url
-          },
-          on_conflict: :replace_all,
-          conflict_target: :username
-        )
+         "real_name" => name,
+         "galleries" => folders}} ->
+        Repo.transaction(fn ->
+          {:ok, artist} =
+            Repo.insert(
+              %Artist{
+                id: artist_id,
+                name: name,
+                username: username,
+                profile_url: profile_url,
+                icon_url: icon_url
+              },
+              on_conflict: :replace_all,
+              conflict_target: :username
+            )
+
+          Enum.each(folders, fn %{"folderid" => id, "name" => name} ->
+            Repo.insert(
+              %Folder{id: id, name: name, artist_id: artist_id},
+              on_conflict: :replace_all,
+              conflict_target: :id)
+          end)
+
+          artist
+        end)
       {:error, message} ->
         case Regex.named_captures(~r/Bad Request: (?<json>.*)/, message) do
           %{"json" => json} ->
@@ -114,8 +127,6 @@ defmodule Aelia.DeviantArt do
           nil ->
             {:error, message}
         end
-
-      error = {:error, _} -> error
     end
   end
 

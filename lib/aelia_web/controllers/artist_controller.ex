@@ -4,6 +4,7 @@ defmodule AeliaWeb.ArtistController do
   alias Aelia.DeviantArt
 
   def show(conn, %{"username" => username}) do
+
     case DeviantArt.artist_info(username) do
       {:ok, artist} ->
         conn
