@@ -4,7 +4,14 @@ defmodule Aelia.DeviantArt do
 
   @base_url "https://www.deviantart.com/api/v1/oauth2"
 
-  def token_auth() do
+  def artist_info(username) do
+    case Repo.get_by(Artist, username: username) do
+      nil -> refresh_artist_info(username)
+      %Artist{} = artist -> {:ok, Repo.preload(artist, :folders)}
+    end
+  end
+
+  defp token_auth() do
     url = "https://www.deviantart.com/oauth2/token"
     params = %{
       grant_type: "client_credentials",
@@ -16,25 +23,6 @@ defmodule Aelia.DeviantArt do
       {:ok, %{"status" => "success", "access_token" => token}} ->
         {:ok, token}
       error -> error
-    end
-  end
-
-  def folders(username) do
-    {:ok, token} = token_auth()
-
-    folders =
-      case fetch_folders(token, username) do
-        {:ok, [%{"name" => "Featured", "parent" => nil}|folders]} -> folders
-        {:ok, folders} -> folders
-      end
-
-    {:ok, Enum.map(folders, &(fetch_folder(token, username, &1)))}
-  end
-
-  def artist_info(username) do
-    case Repo.get(Artist, username) do
-      nil -> fetch_artist_info(username)
-      %Artist{} = artist -> {:ok, Repo.preload(artist, :folders)}
     end
   end
 
@@ -74,7 +62,9 @@ defmodule Aelia.DeviantArt do
     end
   end
 
-  defp fetch_artist_info(username) do
+  defp refresh_artist_info(username) do
+    IO.puts "HERE!"
+
     {:ok, token} = token_auth()
 
     url = "#{@base_url}/user/profile/#{username}"
@@ -82,22 +72,21 @@ defmodule Aelia.DeviantArt do
       username: username,
       access_token: token,
       ext_collections: false,
-      ext_galleries: true,
+      ext_galleries: false,
       mature_content: true
     }
 
     case fetch(url, params) do
       {:ok,
        %{
-         "user" => %{"usericon" => icon_url, "userid" => artist_id},
+         "user" => %{"usericon" => icon_url, "userid" => id},
          "profile_url" => profile_url,
-         "real_name" => name,
-         "galleries" => folders}} ->
+         "real_name" => name}} ->
         Repo.transaction(fn ->
           {:ok, artist} =
             Repo.insert(
               %Artist{
-                id: artist_id,
+                id: id,
                 name: name,
                 username: username,
                 profile_url: profile_url,
@@ -107,12 +96,7 @@ defmodule Aelia.DeviantArt do
               conflict_target: :username
             )
 
-          Enum.each(folders, fn %{"folderid" => id, "name" => name} ->
-            Repo.insert(
-              %Folder{id: id, name: name, artist_id: artist_id},
-              on_conflict: :replace_all,
-              conflict_target: :id)
-          end)
+          refresh_folders(token, id, username)
 
           Repo.preload(artist, :folders)
         end)
@@ -130,9 +114,9 @@ defmodule Aelia.DeviantArt do
     end
   end
 
-  defp fetch_folders(error), do: error
+  defp refresh_folders(token, artist_id, username) do
+    IO.puts "HERE TOO!"
 
-  defp fetch_folders(token, username) do
     url = "#{@base_url}/gallery/folders"
     params = %{
       username: username,
@@ -140,10 +124,19 @@ defmodule Aelia.DeviantArt do
       mature_content: true
     }
 
-    fetch_results(url, params)
+    {:ok, folders} = fetch_results(url, params)
+
+    Enum.each(folders, fn %{"folderid" => id, "name" => name} ->
+      Repo.insert(
+        %Folder{id: id, name: name, artist_id: artist_id},
+        on_conflict: :replace_all,
+        conflict_target: :id)
+    end)
   end
 
-  defp fetch_folder(token, username,
+  defp fetch_folder(
+    token,
+    username,
     %{
       "folderid" => folder_id,
       "name" => name
@@ -164,13 +157,13 @@ defmodule Aelia.DeviantArt do
         {:ok, contents} = fetch_results(url, params)
 
         contents
-        |> Enum.map(&parse_deviation/1)
+        |> Enum.map(&parse_work/1)
         |> Enum.filter(&(Map.get(&1, :file_url)))
       end
     }
   end
 
-  defp parse_deviation(
+  defp parse_work(
     %{
       "deviationid" => id,
       "title" => title,
@@ -198,7 +191,7 @@ defmodule Aelia.DeviantArt do
     }
   end
 
-  defp parse_deviation(%{"deviationid" => id}) do
+  defp parse_work(%{"deviationid" => id}) do
     %{id: id}
   end
 end
