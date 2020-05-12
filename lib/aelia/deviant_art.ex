@@ -9,7 +9,7 @@ defmodule Aelia.DeviantArt do
   def artist_info(username) do
     case Repo.get_by(Artist, username: username) do
       nil -> refresh_artist_info(username)
-      %Artist{} = artist -> {:ok, Repo.preload(artist, :folders)}
+      %Artist{} = artist -> {:ok, Repo.preload(artist, folders: [:children])}
     end
   end
 
@@ -102,7 +102,7 @@ defmodule Aelia.DeviantArt do
 
           refresh_folders(token, id, username)
 
-          Repo.preload(artist, :folders)
+          Repo.preload(artist, folders: [:children])
         end)
       {:error, message} ->
         case Regex.named_captures(~r/Bad Request: (?<json>.*)/, message) do
@@ -128,7 +128,7 @@ defmodule Aelia.DeviantArt do
 
     {:ok, folders} = fetch_results(url, params)
 
-    folders = Enum.map(folders,
+    Enum.each(folders,
       fn %{"folderid" => id, "name" => name, "parent" => parent_id} ->
         Repo.insert(
           %Folder{id: id,

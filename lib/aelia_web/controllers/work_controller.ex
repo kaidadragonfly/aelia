@@ -3,6 +3,7 @@ defmodule AeliaWeb.WorkController do
 
   alias Aelia.DeviantArt
   alias Aelia.DeviantArt.Work
+  alias Aelia.Repo
 
   def show(conn, %{"id" => id}) do
     work = Repo.get!(Work, id)

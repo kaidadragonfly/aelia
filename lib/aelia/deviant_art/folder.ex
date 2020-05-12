@@ -2,8 +2,7 @@ defmodule Aelia.DeviantArt.Folder do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Aelia.DeviantArt.Artist
-  alias Aelia.DeviantArt.Work
+  alias Aelia.DeviantArt.{Artist, Folder, Work}
 
   @primary_key {:id, :string, []}
   @foreign_key_type :string
@@ -12,6 +11,8 @@ defmodule Aelia.DeviantArt.Folder do
     field :name, :string
     field :parent_id, :string
     has_many :works, Work
+    belongs_to :parent, Folder, foreign_key: :id, references: :parent_id, define_field: false
+    has_many :children, Folder, foreign_key: :parent_id, references: :id
 
     timestamps()
   end
