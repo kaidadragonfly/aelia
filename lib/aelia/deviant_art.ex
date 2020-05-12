@@ -128,12 +128,16 @@ defmodule Aelia.DeviantArt do
 
     {:ok, folders} = fetch_results(url, params)
 
-    Enum.each(folders, fn %{"folderid" => id, "name" => name} ->
-      Repo.insert(
-        %Folder{id: id, name: name, artist_id: artist_id},
-        on_conflict: :replace_all,
-        conflict_target: :id)
-    end)
+    folders = Enum.map(folders,
+      fn %{"folderid" => id, "name" => name, "parent" => parent_id} ->
+        Repo.insert(
+          %Folder{id: id,
+                  name: name,
+                  artist_id: artist_id,
+                  parent_id: parent_id},
+          on_conflict: :replace_all,
+          conflict_target: :id)
+      end)
   end
 
   defp get_folder(id) do
@@ -147,7 +151,7 @@ defmodule Aelia.DeviantArt do
   end
 
   defp refresh_folder(
-    folder = %Folder{id: id, name: name, artist: %Artist{username: username}}
+    %Folder{id: id, artist: %Artist{username: username}}
   ) do
     {:ok, token} = token_auth()
 

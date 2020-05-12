@@ -10,6 +10,7 @@ defmodule Aelia.DeviantArt.Folder do
   schema "folders" do
     belongs_to :artist, Artist
     field :name, :string
+    field :parent_id, :string
     has_many :works, Work
 
     timestamps()
