@@ -2,6 +2,8 @@ defmodule Aelia.DeviantArt do
   alias Aelia.Repo
   alias Aelia.DeviantArt.{Artist, Folder, Work}
 
+  import Ecto.Query, only: [from: 2]
+
   @base_url "https://www.deviantart.com/api/v1/oauth2"
 
   def artist_info(username) do
@@ -134,6 +136,16 @@ defmodule Aelia.DeviantArt do
     end)
   end
 
+  defp get_folder(id) do
+    works_query = from w in Work, order_by: w.index
+    folder = Repo.one from f in Folder,
+      where: f.id == ^id,
+      preload: [works: ^works_query],
+      preload: :artist
+
+    {:ok, folder}
+  end
+
   defp refresh_folder(
     folder = %Folder{id: id, name: name, artist: %Artist{username: username}}
   ) do
@@ -177,7 +189,7 @@ defmodule Aelia.DeviantArt do
             conflict_target: :id)
       end)
 
-    {:ok, Repo.preload(folder, :works)}
+    get_folder(id)
   end
 
   defp parse_work(
@@ -185,12 +197,10 @@ defmodule Aelia.DeviantArt do
       "deviationid" => id,
       "title" => title,
       "url" => page_url,
-      "is_downloadable" => true,
       "is_deleted" => false,
       "content" => %{"src" => file_url},
       "thumbs" => thumbs
     }) do
-
     thumb_url = case Enum.find(thumbs,
                       fn(%{"height" => h, "width" => w}) ->
                         w == 100 || h == 100

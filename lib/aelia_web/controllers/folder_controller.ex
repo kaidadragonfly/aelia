@@ -6,7 +6,7 @@ defmodule AeliaWeb.FolderController do
 
   def show(conn, %{"id" => id}) do
     {:ok, folder} = DeviantArt.folder(id)
-    IO.inspect(folder)
+
     render(conn, "show.html", folder: folder)
   end
 end

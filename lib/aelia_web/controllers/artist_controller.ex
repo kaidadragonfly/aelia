@@ -22,6 +22,10 @@ defmodule AeliaWeb.ArtistController do
         conn
         |> put_flash(:info, "Failed save artist #{username}!")
         |> redirect(to: Routes.page_path(conn, :index))
+      {:error, message} ->
+        conn
+        |> put_flash(:info, message)
+        |> redirect(to: Routes.page_path(conn, :index))
     end
   end
 end
