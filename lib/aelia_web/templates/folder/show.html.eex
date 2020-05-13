@@ -7,7 +7,7 @@ Back to
   to: Routes.artist_path(@conn, :show, @folder.artist.username)) %>
 </p>
 
-<%= if length(@folder.works) > 0 do %>
+<%= unless Enum.empty? @folder.works do %>
 Works:
 <ul>
   <%= for work <- @folder.works do %>

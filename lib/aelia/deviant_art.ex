@@ -9,7 +9,7 @@ defmodule Aelia.DeviantArt do
   def artist_info(username) do
     case Repo.get_by(Artist, username: username) do
       nil -> refresh_artist_info(username)
-      %Artist{} = artist -> {:ok, Repo.preload(artist, folders: [:children])}
+      %Artist{} = artist -> {:ok, preload_folders(artist)}
     end
   end
 
@@ -68,6 +68,14 @@ defmodule Aelia.DeviantArt do
     end
   end
 
+  defp preload_folders(%Artist{} = artist) do
+    query = from f in Folder, where: is_nil(f.parent_id), order_by: f.index
+
+    artist
+    |> Repo.preload(folders: query)
+    |> Repo.preload(folders: [children: from(f in Folder, order_by: f.index)])
+  end
+
   defp refresh_artist_info(username) do
     {:ok, token} = token_auth()
 
@@ -102,7 +110,7 @@ defmodule Aelia.DeviantArt do
 
           refresh_folders(token, id, username)
 
-          Repo.preload(artist, folders: [:children])
+          preload_folders(artist)
         end)
       {:error, message} ->
         case Regex.named_captures(~r/Bad Request: (?<json>.*)/, message) do
@@ -128,16 +136,29 @@ defmodule Aelia.DeviantArt do
 
     {:ok, folders} = fetch_results(url, params)
 
-    Enum.each(folders,
-      fn %{"folderid" => id, "name" => name, "parent" => parent_id} ->
-        Repo.insert(
-          %Folder{id: id,
-                  name: name,
-                  artist_id: artist_id,
-                  parent_id: parent_id},
-          on_conflict: :replace_all,
-          conflict_target: :id)
-      end)
+    %{"folderid" => featured_id} =
+      Enum.find(folders, fn f -> Map.get(f, "name") == "Featured" end)
+
+    folders
+    |> Enum.with_index
+    |> Enum.each(
+    fn {%{"folderid" => id, "name" => name, "parent" => parent_id}, index} ->
+      parent_id =
+      if parent_id == featured_id do
+        nil
+      else
+        parent_id
+      end
+
+      Repo.insert(
+        %Folder{id: id,
+                name: name,
+                artist_id: artist_id,
+                parent_id: parent_id,
+                index: index},
+        on_conflict: :replace_all,
+        conflict_target: :id)
+    end)
   end
 
   defp get_folder(id) do

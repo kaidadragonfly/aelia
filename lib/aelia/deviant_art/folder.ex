@@ -10,6 +10,7 @@ defmodule Aelia.DeviantArt.Folder do
     belongs_to :artist, Artist
     field :name, :string
     field :parent_id, :string
+    field :index, :integer
     has_many :works, Work
     belongs_to :parent, Folder, foreign_key: :id, references: :parent_id, define_field: false
     has_many :children, Folder, foreign_key: :parent_id, references: :id

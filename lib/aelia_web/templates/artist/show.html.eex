@@ -29,10 +29,22 @@
     Folders:
     <ul>
       <%= for folder <- @artist.folders do %>
-        <li><%= 
+        <li><%=
             link(
-              folder.name, 
-              to: Routes.folder_path(@conn, :show, folder.id)) %></li>
+              folder.name,
+              to: Routes.folder_path(@conn, :show, folder.id)) %>
+          <%= unless Enum.empty? folder.children do %>
+            <ul>
+              <%= for child <- folder.children do %>
+                <li>
+                  <%= link(
+                    child.name,
+                    to: Routes.folder_path(@conn, :show, child.id)) %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        </li>
       <% end %>
     </ul>
   </li>
