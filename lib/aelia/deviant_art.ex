@@ -197,7 +197,9 @@ defmodule Aelia.DeviantArt do
              title: title,
              page_url: page_url,
              file_url: file_url,
-             thumb_url: thumb_url
+             thumb_url: thumb_url,
+             thumb: thumb,
+             thumb_type: thumb_type
           },
         index} ->
           Repo.insert(
@@ -208,6 +210,8 @@ defmodule Aelia.DeviantArt do
               file_url: file_url,
               thumb_url: thumb_url,
               folder_id: id,
+              thumb: thumb,
+              thumb_type: thumb_type,
               index: index
             },
             on_conflict: :replace_all,
@@ -233,13 +237,28 @@ defmodule Aelia.DeviantArt do
                   %{"src" => url} -> url
                   nil -> nil
                 end
+    {thumb, thumb_type} =
+      case HTTPoison.get(thumb_url) do
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: body,
+           headers: headers
+         }} ->
+          {_, type} =
+            Enum.find(headers, fn {name, _} -> name == "Content-Type" end)
+
+          {body, type}
+      end
 
     %{
       id: id,
       title: title,
       page_url: page_url,
       file_url: file_url,
-      thumb_url: thumb_url
+      thumb_url: thumb_url,
+      thumb: thumb,
+      thumb_type: thumb_type
     }
   end
 

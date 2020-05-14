@@ -12,6 +12,10 @@ defmodule Aelia.DeviantArt.Work do
     field :page_url, :string
     field :thumb_url, :string
     field :title, :string
+    field :file, :binary
+    field :file_type, :string
+    field :thumb, :binary
+    field :thumb_type, :string
     field :index, :integer
 
     timestamps()
