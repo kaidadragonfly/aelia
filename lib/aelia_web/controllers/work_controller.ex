@@ -8,13 +8,21 @@ defmodule AeliaWeb.WorkController do
   def file(conn, %{"id" => id}) do
     work = Repo.get!(Work, id)
 
-    send_download(conn, {:binary, work.file}, disposition: :inline)
+    send_download(
+      conn,
+      {:binary, work.file},
+      disposition: :inline,
+      filename: "#{id}")
   end
 
   def thumb(conn, %{"id" => id}) do
     work = Repo.get!(Work, id)
 
-    send_download(conn, {:binary, work.thumb}, disposition: :inline)
+    send_download(
+      conn,
+      {:binary, work.thumb},
+      disposition: :inline,
+      filename: "#{id}-thumb")
   end
 
   def show(conn, %{"id" => id}) do

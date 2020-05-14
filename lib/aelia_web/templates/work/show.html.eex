@@ -31,5 +31,8 @@
     <strong>Folder:</strong>
     <%= @work.folder_id %>
   </li>
-
 </ul>
+
+<img
+  src="<%= Routes.work_file_path(@conn, :file, @work.id) %>"
+  alt="<%= @work.title %>" />

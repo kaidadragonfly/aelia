@@ -28,17 +28,31 @@ defmodule Aelia.DeviantArt do
     case fetch(url, params) do
       {:ok, %{"status" => "success", "access_token" => token}} ->
         {:ok, token}
-      error -> error
+      error ->
+        error
     end
   end
 
-  defp fetch(url, params, sleep \\ 100) do
+  defp get(url, params, sleep \\ 100) do
     case HTTPoison.get(url, [], params: params) do
       {:ok, %HTTPoison.Response{status_code: 429}} ->
         Process.sleep(sleep)
-        fetch(url, params, 2 * sleep)
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, Jason.decode!(body)}
+        get(url, params, 2 * sleep)
+      {:ok, resp = %HTTPoison.Response{status_code: 200}} ->
+        {:ok, resp}
+      resp -> resp
+    end
+  end
+
+  defp fetch(url, params) do
+    case get(url, params) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
+        {_, type} = Enum.find(headers, fn {name, _} -> name == "Content-Type" end)
+        if String.starts_with?(type, "application/json") do
+          {:ok, Jason.decode!(body)}
+        else
+          {:ok, body}
+        end
       {:ok, %HTTPoison.Response{status_code: 400, body: body}} ->
         {:error, "Bad Request: #{body}"}
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
@@ -188,18 +202,20 @@ defmodule Aelia.DeviantArt do
     {:ok, contents} = fetch_results(url, params)
 
     works = contents
-    |> Enum.map(&parse_work/1)
+    |> Enum.map(&get_work/1)
     |> Enum.filter(&(Map.get(&1, :file_url)))
 
     works |> Enum.with_index |> Enum.each(
-      fn {%{
+      fn {%Work{
              id: work_id,
              title: title,
              page_url: page_url,
              file_url: file_url,
              thumb_url: thumb_url,
              thumb: thumb,
-             thumb_type: thumb_type
+             thumb_type: thumb_type,
+             file: file,
+             file_type: file_type
           },
         index} ->
           Repo.insert(
@@ -212,6 +228,8 @@ defmodule Aelia.DeviantArt do
               folder_id: id,
               thumb: thumb,
               thumb_type: thumb_type,
+              file: file,
+              file_type: file_type,
               index: index
             },
             on_conflict: :replace_all,
@@ -221,7 +239,14 @@ defmodule Aelia.DeviantArt do
     get_folder(id)
   end
 
-  defp parse_work(
+  defp get_work(contents = %{"deviationid" => id}) do
+    case Repo.get(Work, id) do
+      %Work{} = work -> work
+      nil -> refresh_work(contents)
+    end
+  end
+
+  defp refresh_work(
     %{
       "deviationid" => id,
       "title" => title,
@@ -230,6 +255,7 @@ defmodule Aelia.DeviantArt do
       "content" => %{"src" => file_url},
       "thumbs" => thumbs
     }) do
+
     thumb_url = case Enum.find(thumbs,
                       fn(%{"height" => h, "width" => w}) ->
                         w == 100 || h == 100
@@ -238,7 +264,7 @@ defmodule Aelia.DeviantArt do
                   nil -> nil
                 end
     {thumb, thumb_type} =
-      case HTTPoison.get(thumb_url) do
+      case get(thumb_url, %{}) do
         {:ok,
          %HTTPoison.Response{
            status_code: 200,
@@ -251,18 +277,34 @@ defmodule Aelia.DeviantArt do
           {body, type}
       end
 
-    %{
+    {file, file_type} =
+      case get(file_url, %{}) do
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: body,
+           headers: headers
+         }} ->
+          {_, type} =
+            Enum.find(headers, fn {name, _} -> name == "Content-Type" end)
+
+          {body, type}
+      end
+
+    %Work{
       id: id,
       title: title,
       page_url: page_url,
       file_url: file_url,
       thumb_url: thumb_url,
       thumb: thumb,
-      thumb_type: thumb_type
+      thumb_type: thumb_type,
+      file: file,
+      file_type: file_type
     }
   end
 
-  defp parse_work(%{"deviationid" => id}) do
+  defp refresh_work(%{"deviationid" => id}) do
     %{id: id}
   end
 end
