@@ -17,16 +17,21 @@ defmodule AeliaWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
-    post "/artists", ArtistController, :search, as: "artists_search"
-    get "/artists", ArtistController, :index
-    get "/artists/:username", ArtistController, :show, as: "artist"
 
-    get "/folders/:id", FolderController, :show, as: "folder"
-
-    get "/works/:id", WorkController, :show, as: "work"
     get "/works/:id/thumb", WorkController, :thumb, as: "work_thumb"
     get "/works/:id/file", WorkController, :file, as: "work_file"
   end
+
+  scope "/artists", AeliaWeb do
+    pipe_through :browser
+
+    post "/", ArtistController, :search, as: "artists_search"
+    get "/", ArtistController, :index, as: "artists"
+    get "/:username", ArtistController, :show, as: "artist"
+    get "/:username/folders/:index", FolderController, :show, as: "folder"
+    get "/:username/folders/:folder_index/works/:index", WorkController, :show, as: "work"
+  end
+
 
   # Other scopes may use custom stacks.
   # scope "/api", AeliaWeb do

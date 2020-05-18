@@ -12,7 +12,12 @@
   <ul>
     <%= for work <- @folder.works do %>
       <li>
-        <a href="<%= Routes.work_path(@conn, :show, work.id)%>">
+        <a href="<%= Routes.work_path(
+                 @conn, 
+                 :show, 
+                 @folder.artist.username,
+                 @folder.index,
+                 work.index)%>">
           <img
             src="<%= Routes.work_thumb_path(@conn, :thumb, work.id) %>"
             alt="<%= work.title %>" />

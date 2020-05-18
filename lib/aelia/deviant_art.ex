@@ -13,8 +13,11 @@ defmodule Aelia.DeviantArt do
     end
   end
 
-  def folder(id) do
-    Repo.get!(Folder, id) |> Repo.preload(:artist) |> refresh_folder
+  def folder(username, index) do
+    # TODO: Clean up!
+    artist = Repo.get_by!(Artist, username: username)
+
+    Repo.get_by!(Folder, artist_id: artist.id, index: index) |> Repo.preload(:artist) |> refresh_folder
   end
 
   defp token_auth() do
