@@ -1,6 +1,7 @@
 defmodule Aelia.DeviantArt do
   alias Aelia.Repo
   alias Aelia.DeviantArt.{Artist, Folder, Work}
+  alias Aelia.DeviantArt.HTTP
 
   import Ecto.Query, only: [from: 2]
 
@@ -20,71 +21,6 @@ defmodule Aelia.DeviantArt do
     Repo.get_by!(Folder, artist_id: artist.id, index: index) |> Repo.preload(:artist) |> refresh_folder
   end
 
-  defp token_auth() do
-    url = "https://www.deviantart.com/oauth2/token"
-    params = %{
-      grant_type: "client_credentials",
-      client_id: System.get_env("CLIENT_ID"),
-      client_secret: System.get_env("CLIENT_SECRET")
-    }
-
-    case fetch(url, params) do
-      {:ok, %{"status" => "success", "access_token" => token}} ->
-        {:ok, token}
-      error ->
-        error
-    end
-  end
-
-  defp get(url, params, sleep \\ 100) do
-    case HTTPoison.get(url, [], params: params) do
-      {:ok, %HTTPoison.Response{status_code: 429}} ->
-        Process.sleep(sleep)
-        get(url, params, 2 * sleep)
-      {:ok, resp = %HTTPoison.Response{status_code: 200}} ->
-        {:ok, resp}
-      resp -> resp
-    end
-  end
-
-  defp fetch(url, params) do
-    case get(url, params) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
-        {_, type} = Enum.find(headers, fn {name, _} -> name == "Content-Type" end)
-        if String.starts_with?(type, "application/json") do
-          {:ok, Jason.decode!(body)}
-        else
-          {:ok, body}
-        end
-      {:ok, %HTTPoison.Response{status_code: 400, body: body}} ->
-        {:error, "Bad Request: #{body}"}
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        {:error, "Unexpected error.  status: #{status} body: #{body}"}
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        {:error, "Error: #{reason}"}
-    end
-  end
-
-  defp fetch_results(url, params, offset \\ 0) do
-    params = Map.put(params, :offset, offset)
-
-    case fetch(url, params) do
-      {:ok, %{
-          "has_more" => true,
-          "next_offset" => next_offset,
-          "results" => results
-       }} ->
-        case fetch_results(url, params, next_offset) do
-          {:ok, next_results} -> {:ok, results ++ next_results}
-          error -> error
-        end
-      {:ok, %{"has_more" => false, "results" => results}} ->
-        {:ok, results}
-      error ->
-        {:error, error}
-    end
-  end
-
   defp preload_folders(%Artist{} = artist) do
     query = from f in Folder, where: is_nil(f.parent_id), order_by: f.index
 
@@ -94,7 +30,7 @@ defmodule Aelia.DeviantArt do
   end
 
   defp refresh_artist_info(username) do
-    {:ok, token} = token_auth()
+    {:ok, token} = HTTP.token_auth()
 
     url = "#{@base_url}/user/profile/#{username}"
     params = %{
@@ -105,7 +41,7 @@ defmodule Aelia.DeviantArt do
       mature_content: true
     }
 
-    case fetch(url, params) do
+    case HTTP.fetch(url, params) do
       {:ok,
        %{
          "user" => %{"usericon" => icon_url, "userid" => id},
@@ -151,7 +87,7 @@ defmodule Aelia.DeviantArt do
       mature_content: true
     }
 
-    {:ok, folders} = fetch_results(url, params)
+    {:ok, folders} = HTTP.fetch_results(url, params)
 
     %{"folderid" => featured_id} =
       Enum.find(folders, fn f -> Map.get(f, "name") == "Featured" end)
@@ -191,7 +127,7 @@ defmodule Aelia.DeviantArt do
   defp refresh_folder(
     %Folder{id: id, artist: %Artist{username: username}}
   ) do
-    {:ok, token} = token_auth()
+    {:ok, token} = HTTP.token_auth()
 
     url = "#{@base_url}/gallery/#{id}"
     params = %{
@@ -202,7 +138,7 @@ defmodule Aelia.DeviantArt do
       mature_content: true
     }
 
-    {:ok, contents} = fetch_results(url, params)
+    {:ok, contents} = HTTP.fetch_results(url, params)
 
     works = contents
     |> Enum.map(&get_work/1)
@@ -216,9 +152,9 @@ defmodule Aelia.DeviantArt do
              file_url: file_url,
              thumb_url: thumb_url,
              thumb: thumb,
-             thumb_type: thumb_type,
+             thumb_ext: thumb_ext,
              file: file,
-             file_type: file_type
+             file_ext: file_ext
           },
         index} ->
           Repo.insert(
@@ -230,9 +166,9 @@ defmodule Aelia.DeviantArt do
               thumb_url: String.replace(thumb_url, ~r/[?]token=.*/, ""),
               folder_id: id,
               thumb: thumb,
-              thumb_type: thumb_type,
+              thumb_ext: thumb_ext,
               file: file,
-              file_type: file_type,
+              file_ext: file_ext,
               index: index
             },
             on_conflict: :replace_all,
@@ -266,8 +202,8 @@ defmodule Aelia.DeviantArt do
                   %{"src" => url} -> url
                   nil -> nil
                 end
-    {thumb, thumb_type} =
-      case get(thumb_url, %{}) do
+    {thumb, thumb_ext} =
+      case HTTP.get(thumb_url, %{}) do
         {:ok,
          %HTTPoison.Response{
            status_code: 200,
@@ -277,11 +213,11 @@ defmodule Aelia.DeviantArt do
           {_, type} =
             Enum.find(headers, fn {name, _} -> name == "Content-Type" end)
 
-          {body, type}
+          {body, HTTP.type_to_ext(type)}
       end
 
-    {file, file_type} =
-      case get(file_url, %{}) do
+    {file, file_ext} =
+      case HTTP.get(file_url, %{}) do
         {:ok,
          %HTTPoison.Response{
            status_code: 200,
@@ -291,7 +227,7 @@ defmodule Aelia.DeviantArt do
           {_, type} =
             Enum.find(headers, fn {name, _} -> name == "Content-Type" end)
 
-          {body, type}
+          {body, HTTP.type_to_ext(type)}
       end
 
     %Work{
@@ -301,9 +237,9 @@ defmodule Aelia.DeviantArt do
       file_url: file_url,
       thumb_url: thumb_url,
       thumb: thumb,
-      thumb_type: thumb_type,
+      thumb_ext: thumb_ext,
       file: file,
-      file_type: file_type
+      file_ext: file_ext
     }
   end
 

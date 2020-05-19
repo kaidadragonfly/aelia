@@ -2,7 +2,7 @@ defmodule Aelia.DeviantArt.Work do
   use Ecto.Schema
   import Ecto.Query, only: [from: 2]
 
-  alias Aelia.DeviantArt.{Artist, Folder}
+  alias Aelia.DeviantArt.{Artist, Folder, Work}
   alias Aelia.Repo
 
   @primary_key {:id, :string, []}
@@ -14,9 +14,9 @@ defmodule Aelia.DeviantArt.Work do
     field :thumb_url, :string
     field :title, :string
     field :file, :binary
-    field :file_type, :string
+    field :file_ext, :string
     field :thumb, :binary
-    field :thumb_type, :string
+    field :thumb_ext, :string
     field :index, :integer
 
     timestamps()
@@ -27,7 +27,7 @@ defmodule Aelia.DeviantArt.Work do
              "index" => index}) do
 
     work = Repo.one!(
-      from w in __MODULE__,
+      from w in Work,
       where: w.index == ^index,
       join: f in Folder,
       on: w.folder_id == f.id,
@@ -36,13 +36,9 @@ defmodule Aelia.DeviantArt.Work do
       on: f.artist_id == a.id,
       where: a.username == ^username)
 
-    ext = case work.file_type do
-            "image/jpeg" -> "jpeg"
-            "image/png" -> "png"
-          end
 
     Map.merge(
       work,
-      %{ext: ext, username: username, folder_index: folder_index})
+      %{username: username, folder_index: folder_index})
   end
 end

@@ -33,7 +33,7 @@
 </ul>
 
 <img
-  src="<%= Routes.work_file_path(@conn, :file, @work.id, @work.ext) %>"
+  src="<%= Routes.work_file_path(@conn, :file, @work.id, @work.file_ext) %>"
   alt="<%= @work.title %>" />
 
 <nav>
