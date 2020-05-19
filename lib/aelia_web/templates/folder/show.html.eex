@@ -19,7 +19,7 @@
                  @folder.index,
                  work.index)%>">
           <img
-            src="<%= Routes.work_thumb_path(@conn, :thumb, work.id) %>"
+            src="<%= Routes.work_thumb_path(@conn, :thumb, work.id, @ext.(work)) %>"
             alt="<%= work.title %>" />
         </a>
         <%= link("Original", to: work.file_url) %>

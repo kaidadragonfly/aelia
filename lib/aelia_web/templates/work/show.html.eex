@@ -1,7 +1,6 @@
 <h2>Show Work</h2>
 
 <ul>
-
   <li>
     <strong>Id:</strong>
     <%= @work.id %>
@@ -34,5 +33,15 @@
 </ul>
 
 <img
-  src="<%= Routes.work_file_path(@conn, :file, @work.id) %>"
+  src="<%= Routes.work_file_path(@conn, :file, @work.id, @work.ext) %>"
   alt="<%= @work.title %>" />
+
+<nav>
+  <a id="next" 
+     href="<%= Routes.work_path(
+           @conn,
+           :show,
+           @work.username,
+           @work.folder_index,
+           @work.index + 1)%>">Next</a>
+</nav>

@@ -18,8 +18,8 @@ defmodule AeliaWeb.Router do
 
     get "/", PageController, :index
 
-    get "/works/:id/thumb", WorkController, :thumb, as: "work_thumb"
-    get "/works/:id/file", WorkController, :file, as: "work_file"
+    get "/works/:id/thumb.:ext", WorkController, :thumb, as: "work_thumb"
+    get "/works/:id/file.:ext", WorkController, :file, as: "work_file"
   end
 
   scope "/artists", AeliaWeb do

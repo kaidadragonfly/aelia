@@ -98,3 +98,12 @@ header nav a {
     margin: 2rem 1rem;
   }
 }
+
+img {
+  display: block;
+  margin: 0 auto;
+}
+
+#next {
+  float: right;
+}
