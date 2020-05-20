@@ -3,7 +3,7 @@
 if [ "$(which realpath 2>/dev/null)" ]; then
     BIN_DIR=$(dirname "$(realpath "$0")")
 else    
-    BIN_DIR=$(dirname "$(${PYTHON} -c "import os; print(os.path.realpath('$0'))")")
+    BIN_DIR=$(dirname "$(python -c "import os; print(os.path.realpath('$0'))")")
 fi
 ROOT_DIR="$BIN_DIR/.."
 cd "$ROOT_DIR" || exit 1
