@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+BIN_DIR=$(dirname "$(realpath "$0")")
+ROOT_DIR=$(realpath "${BIN_DIR}/..")
+SERVICE_FILE="${ROOT_DIR}/aelia.service"
+
+cat >"${SERVICE_FILE}" << EOF
+[Unit]
+Description=Aelia DeviantArt Viewer
+After=postgresql.service
+
+[Service]
+Type=simple
+User=${USER}
+ExecStart=${BIN_DIR}/start
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo ln -s "${SERVICE_FILE}" /etc/systemd/system/

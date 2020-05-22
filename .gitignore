@@ -35,3 +35,6 @@ npm-debug.log
 
 # Use .env for secrets
 .env
+
+# Ignore .service files
+*.service
