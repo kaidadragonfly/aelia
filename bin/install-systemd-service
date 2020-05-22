@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 BIN_DIR=$(dirname "$(realpath "$0")")
 ROOT_DIR=$(realpath "${BIN_DIR}/..")
 SERVICE_FILE="${ROOT_DIR}/aelia.service"
@@ -19,10 +21,11 @@ WantedBy=multi-user.target
 EOF
 echo "Generated serivce file at: ${SERVICE_FILE}" >&2
 
-echo "Moving to /etc/systemd/system using \"sudo\".  This may prompt for your password."
+echo "Moving to /etc/systemd/system using \"sudo\".  This may prompt for your password." >&2
 sudo chown root:root "${SERVICE_FILE}"
 sudo mv "${SERVICE_FILE}" /etc/systemd/system/
-
+echo "Performing a systemctl daemon-reload" >&2
+sudo systemctl daemon-reload
 
 cat >&2 << EOF
 To start the service now you can run:
