@@ -19,13 +19,15 @@ WantedBy=multi-user.target
 EOF
 echo "Generated serivce file at: ${SERVICE_FILE}" >&2
 
-echo "Symlinking using \"sudo\".  This may prompt for your password."
-sudo ln -s "${SERVICE_FILE}" /etc/systemd/system/
+echo "Moving to /etc/systemd/system using \"sudo\".  This may prompt for your password."
+sudo chown root:root "${SERVICE_FILE}"
+sudo mv "${SERVICE_FILE}" /etc/systemd/system/
+
 
 cat >&2 << EOF
 To start the service now you can run:
-  $ systemctl start aelia
+  $ sudo systemctl start aelia
 
 To automatically start on boot you can run:
-  $ systemctl enable aelia
+  $ sudo systemctl enable aelia
 EOF
