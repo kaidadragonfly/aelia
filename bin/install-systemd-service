@@ -20,10 +20,18 @@ ExecStart=${BIN_DIR}/start
 WantedBy=multi-user.target
 EOF
 echo "Generated serivce file at: ${SERVICE_FILE}" >&2
+chmod 755 "${SERVICE_FILE}"
 
 echo "Moving to /etc/systemd/system using \"sudo\".  This may prompt for your password." >&2
 sudo chown root:root "${SERVICE_FILE}"
 sudo mv "${SERVICE_FILE}" /etc/systemd/system/
+
+if [ -x "$(command -v restorecon)" ]; then
+    echo "Restoring security contect of /ect/systemd/system" >&2
+    sudo restorecon -R /etc/systemd/system
+    chcon -t bin_t "${BIN_DIR}"/start
+fi
+
 echo "Performing a systemctl daemon-reload" >&2
 sudo systemctl daemon-reload
 
