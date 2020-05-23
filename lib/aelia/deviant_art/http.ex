@@ -1,4 +1,6 @@
 defmodule Aelia.DeviantArt.HTTP do
+  require Logger
+
   def type_to_ext("image/jpeg"), do: "jpeg"
   def type_to_ext("image/png"), do: "png"
   def type_to_ext("image/gif"), do: "gif"
@@ -58,6 +60,8 @@ defmodule Aelia.DeviantArt.HTTP do
   end
 
   def get(url, params, sleep \\ 100) do
+    Logger.info("Requesting url: #{url}")
+
     case HTTPoison.get(url, [], params: params) do
       {:ok, %HTTPoison.Response{status_code: 429}} ->
         Process.sleep(sleep)
