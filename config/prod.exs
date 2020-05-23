@@ -11,6 +11,7 @@ use Mix.Config
 # before starting your production server.
 config :aelia, AeliaWeb.Endpoint,
   url: [host: "localhost", path: "/aelia", port: 4200],
+  code_reloader: true,
   cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Do not print debug messages in production
