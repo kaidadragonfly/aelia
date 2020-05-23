@@ -12,7 +12,16 @@ use Mix.Config
 config :aelia, AeliaWeb.Endpoint,
   url: [host: "localhost", path: "/aelia", port: 4200],
   code_reloader: true,
-  cache_static_manifest: "priv/static/cache_manifest.json"
+  cache_static_manifest: "priv/static/cache_manifest.json",
+  watchers: [
+    node: [
+      "node_modules/webpack/bin/webpack.js",
+      "--mode",
+      "development",
+      "--watch-stdin",
+      cd: Path.expand("../assets", __DIR__)
+    ]
+  ]
 
 # Do not print debug messages in production
 config :logger, level: :info
