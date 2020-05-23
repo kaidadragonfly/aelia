@@ -1,6 +1,7 @@
 defmodule Aelia.DeviantArt.HTTP do
   def type_to_ext("image/jpeg"), do: "jpeg"
   def type_to_ext("image/png"), do: "png"
+  def type_to_ext("image/gif"), do: "gif"
 
   def token_auth() do
     url = "https://www.deviantart.com/oauth2/token"
