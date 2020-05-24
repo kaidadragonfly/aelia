@@ -5,4 +5,9 @@ ROOT_DIR="$BIN_DIR/.."
 cd "$ROOT_DIR" || exit 1
 
 source .env
-elixir --sname aelia -S mix phx.server
+
+if [ "${COOKIE}" ]; then
+    elixir --name "aelia@${HOSTNAME}.local" --cookie "${COOKIE}" --erl "-kernel inet_dist_listen_min 44200 inet_dist_listen_max 44200" -S mix phx.server
+else
+    mix phx.server
+fi
