@@ -1,0 +1,9 @@
+* Write controller tests.  (Use stream_data.)
+* Refactor to encapsulate current logic.
+* Add entries to folder (so that it is obvious when we hit the last
+  work in a folder).
+* Add login to the app.
+* Download files in background.
+* Use cachex for loading thumbnails.
+* Use LiveView to do things like lazy loading of thumbnails.
+* Style
