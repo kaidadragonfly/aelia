@@ -18,6 +18,8 @@ defmodule Aelia.DeviantArt.Work do
     field :thumb, :binary
     field :thumb_ext, :string
     field :index, :integer
+    field :username, :string, virtual: true
+    field :folder_index, :integer, virtual: true
 
     timestamps()
   end
@@ -34,11 +36,7 @@ defmodule Aelia.DeviantArt.Work do
       where: f.index == ^folder_index,
       join: a in Artist,
       on: f.artist_id == a.id,
-      where: a.username == ^username)
-
-
-    Map.merge(
-      work,
-      %{username: username, folder_index: folder_index})
+      where: a.username == ^username,
+      select_merge: %{username: ^username, folder_index: ^folder_index})
   end
 end
