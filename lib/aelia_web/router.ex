@@ -25,8 +25,8 @@ defmodule AeliaWeb.Router do
   scope "/artists", AeliaWeb do
     pipe_through :browser
 
-    post "/", ArtistController, :search, as: "artists_search"
-    get "/", ArtistController, :index, as: "artists"
+    post "/", ArtistController, :search, as: "artist"
+    get "/", ArtistController, :index, as: "artist"
     get "/:username", ArtistController, :show, as: "artist"
     get "/:username/folders/:index", FolderController, :show, as: "folder"
     get "/:username/folders/:folder_index/works/:index", WorkController, :show, as: "work"

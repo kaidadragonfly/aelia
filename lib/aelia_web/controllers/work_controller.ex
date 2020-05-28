@@ -1,8 +1,7 @@
 defmodule AeliaWeb.WorkController do
   use AeliaWeb, :controller
 
-  alias Aelia.DeviantArt
-  alias Aelia.DeviantArt.{Work, Folder, Artist}
+  alias Aelia.DeviantArt.Work
   alias Aelia.Repo
 
   def file(conn, %{"id" => id, "ext" => ext}) do

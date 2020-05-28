@@ -28,7 +28,7 @@ defmodule Aelia.DeviantArt.Work do
              "folder_index" => folder_index,
              "index" => index}) do
 
-    work = Repo.one!(
+    Repo.one!(
       from w in Work,
       where: w.index == ^index,
       join: f in Folder,
