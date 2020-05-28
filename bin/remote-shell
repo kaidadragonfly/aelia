@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+if ! [ "$#" -eq 1 ]; then
+    echo "Usage: $0 [hostname]" >&2
+    exit 1
+else
+    BIN_DIR=$(dirname "$(realpath "$0")")
+    ROOT_DIR="$BIN_DIR/.."
+    cd "$ROOT_DIR" || exit 1
+
+    DEST_HOST="$1"
+
+    source .env
+
+    if [ -z "${COOKIE}" ]; then
+        echo "Error: \$COOKIE must be set." >&2
+        exit 2
+    fi
+
+    iex --name "shell@${HOSTNAME}.local" --cookie "${COOKIE}" --remsh "aelia@${DEST_HOST}"
+fi
