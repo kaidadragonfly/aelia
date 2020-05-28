@@ -2,8 +2,6 @@ defmodule Aelia.Repo.Migrations.RequireFields do
   use Ecto.Migration
 
   def change do
-    create index("artists", [:username], unique: true)
-
     alter table("folders") do
       modify :name, :string, null: false
       modify :artist_id, :string, null: false
