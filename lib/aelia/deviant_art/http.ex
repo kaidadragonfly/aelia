@@ -34,8 +34,8 @@ defmodule Aelia.DeviantArt.HTTP do
         {:error, "Bad Request: #{body}"}
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Unexpected error.  status: #{status} body: #{body}"}
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        {:error, "Error: #{reason}"}
+      {:error, %HTTPoison.Error{} = reason} ->
+        {:error, "Error: #{HTTPoison.Error.message(reason)}"}
     end
   end
 
