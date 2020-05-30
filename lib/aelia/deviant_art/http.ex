@@ -66,7 +66,7 @@ defmodule Aelia.DeviantArt.HTTP do
           url,
           [],
           params: params,
-          ssl: [{:versions, [:"tlsv1.2"]}]) do
+          ssl: [{:versions, [:"tlsv1.3", :"tlsv1.2"]}]) do
       {:ok, %HTTPoison.Response{status_code: 429}} ->
         Process.sleep(sleep)
         get(url, params, 2 * sleep)
