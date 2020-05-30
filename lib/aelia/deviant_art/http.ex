@@ -62,7 +62,11 @@ defmodule Aelia.DeviantArt.HTTP do
   def get(url, params, sleep \\ 100) do
     Logger.info("Requesting url: #{url}")
 
-    case HTTPoison.get(url, [], params: params) do
+    case HTTPoison.get(
+          url,
+          [],
+          params: params,
+          ssl: [{:versions, [:"tlsv1.2"]}]) do
       {:ok, %HTTPoison.Response{status_code: 429}} ->
         Process.sleep(sleep)
         get(url, params, 2 * sleep)
