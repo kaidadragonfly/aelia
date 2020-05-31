@@ -5,7 +5,7 @@ defmodule Aelia.DeviantArt do
 
   import Ecto.Query, only: [from: 2]
 
-  @base_url "https://www.deviantart.com/api/v1/oauth2"
+  @base_url Application.fetch_env!(:aelia, :deviantart_base_url)
 
   def artist_info(username) do
     case Repo.get_by(Artist, username: username) do
