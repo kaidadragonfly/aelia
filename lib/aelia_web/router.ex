@@ -9,34 +9,23 @@ defmodule AeliaWeb.Router do
     plug :put_secure_browser_headers
   end
 
-  pipeline :api do
-    plug :accepts, ["json"]
-  end
-
   scope "/", AeliaWeb do
     pipe_through :browser
 
     get "/", PageController, :index
 
+    resources "/artists", ArtistController, param: "username", only: [:index, :show] do
+      resources "/folders", FolderController, param: "index", only: [:show] do
+        resources "/works", WorkController, param: "index", only: [:show]
+      end
+    end
+
+    # TODO, rename to :create
+    post "/", ArtistController, :search, as: "artist"
+
     get "/works/:id/thumb.:ext", WorkController, :thumb, as: "work_thumb"
     get "/works/:id/file.:ext", WorkController, :file, as: "work_file"
   end
-
-  scope "/artists", AeliaWeb do
-    pipe_through :browser
-
-    post "/", ArtistController, :search, as: "artist"
-    get "/", ArtistController, :index, as: "artist"
-    get "/:username", ArtistController, :show, as: "artist"
-    get "/:username/folders/:index", FolderController, :show, as: "folder"
-    get "/:username/folders/:folder_index/works/:index", WorkController, :show, as: "work"
-  end
-
-
-  # Other scopes may use custom stacks.
-  # scope "/api", AeliaWeb do
-  #   pipe_through :api
-  # end
 
   # Enables LiveDashboard only for development
   #

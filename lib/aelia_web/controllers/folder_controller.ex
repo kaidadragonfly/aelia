@@ -3,7 +3,7 @@ defmodule AeliaWeb.FolderController do
 
   alias Aelia.DeviantArt
 
-  def show(conn, %{"username" => username, "index" => index}) do
+  def show(conn, %{"artist_username" => username, "index" => index}) do
     {:ok, folder} = DeviantArt.folder(username, index)
 
     render(conn, "show.html", folder: folder)

@@ -24,10 +24,7 @@ defmodule Aelia.DeviantArt.Work do
     timestamps()
   end
 
-  def get!(%{"username" => username,
-             "folder_index" => folder_index,
-             "index" => index}) do
-
+  def get!(%{username: username, folder_index: folder_index, index: index}) do
     Repo.one!(
       from w in Work,
       where: w.index == ^index,

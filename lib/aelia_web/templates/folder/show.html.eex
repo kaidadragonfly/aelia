@@ -12,7 +12,7 @@
   <ul>
     <%= for work <- @folder.works do %>
       <li>
-        <a href="<%= Routes.work_path(
+        <a href="<%= Routes.artist_folder_work_path(
                  @conn, 
                  :show, 
                  @folder.artist.username,

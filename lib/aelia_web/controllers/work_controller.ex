@@ -24,7 +24,14 @@ defmodule AeliaWeb.WorkController do
       filename: "#{id}-thumb.#{ext}")
   end
 
-  def show(conn, params) do
-    render(conn, "show.html", work: Work.get!(params))
+  def show(
+    conn,
+    %{
+      "artist_username" => username,
+      "folder_index" => folder_index,
+      "index" => index
+    }) do
+    render(conn, "show.html", work: Work.get!(
+          %{username: username, folder_index: folder_index, index: index}))
   end
 end

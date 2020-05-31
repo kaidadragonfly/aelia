@@ -32,8 +32,9 @@
         <li><%=
             link(
               folder.name,
-              to: Routes.folder_path(
-                @conn, :show, 
+              to: Routes.artist_folder_path(
+                @conn, 
+                :show, 
                 @artist.username, 
                 folder.index)) %>
           <%= unless Enum.empty? folder.children do %>
@@ -42,7 +43,7 @@
                 <li>
                   <%= link(
                     child.name,
-                    to: Routes.folder_path(
+                    to: Routes.artist_folder_path(
                       @conn, 
                       :show, 
                       @artist.username, 
