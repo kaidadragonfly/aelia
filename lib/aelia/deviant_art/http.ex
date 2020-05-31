@@ -1,19 +1,20 @@
 defmodule Aelia.DeviantArt.HTTP do
   require Logger
 
+  @auth_url Application.fetch_env!(:aelia, :deviantart_auth_url)
+
   def type_to_ext("image/jpeg"), do: "jpeg"
   def type_to_ext("image/png"), do: "png"
   def type_to_ext("image/gif"), do: "gif"
 
   def token_auth() do
-    url = "https://www.deviantart.com/oauth2/token"
     params = %{
       grant_type: "client_credentials",
       client_id: System.get_env("CLIENT_ID"),
       client_secret: System.get_env("CLIENT_SECRET")
     }
 
-    case fetch(url, params) do
+    case fetch(@auth_url, params) do
       {:ok, %{"status" => "success", "access_token" => token}} ->
         {:ok, token}
       error ->

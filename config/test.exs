@@ -20,3 +20,7 @@ config :aelia, AeliaWeb.Endpoint,
 
 # Print only warnings and errors during test
 config :logger, level: :warn
+
+# Use a mock server in place of deviant_art
+config :aelia, :deviantart_base_url, "http://localhost:54200"
+config :aelia, :deviantart_auth_url, "http://localhost:54200/auth"
