@@ -7,7 +7,7 @@ defmodule AeliaWeb.ArtistController do
     redirect(conn, to: Routes.page_path(conn, :index))
   end
 
-  def search(conn, %{"username" => username}) do
+  def create(conn, %{"username" => username}) do
     # TODO: Handle not_found here. Display a search box.
     redirect(conn, to: Routes.artist_path(conn, :show, username))
   end

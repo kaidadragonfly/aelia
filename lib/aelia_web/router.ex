@@ -14,14 +14,11 @@ defmodule AeliaWeb.Router do
 
     get "/", PageController, :index
 
-    resources "/artists", ArtistController, param: "username", only: [:index, :show] do
+    resources "/artists", ArtistController, param: "username", only: [:index, :show, :create] do
       resources "/folders", FolderController, param: "index", only: [:show] do
         resources "/works", WorkController, param: "index", only: [:show]
       end
     end
-
-    # TODO, rename to :create
-    post "/", ArtistController, :search, as: "artist"
 
     get "/works/:id/thumb.:ext", WorkController, :thumb, as: "work_thumb"
     get "/works/:id/file.:ext", WorkController, :file, as: "work_file"
