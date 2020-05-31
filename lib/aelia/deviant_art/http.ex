@@ -1,7 +1,9 @@
 defmodule Aelia.DeviantArt.HTTP do
   require Logger
 
-  @auth_url Application.fetch_env!(:aelia, :deviantart_auth_url)
+  @auth_url Application.fetch_env!(:aelia, :da_auth_url)
+  @client_id Application.fetch_env!(:aelia, :da_client_id)
+  @client_secret Application.fetch_env!(:aelia, :da_client_secret)
 
   def type_to_ext("image/jpeg"), do: "jpeg"
   def type_to_ext("image/png"), do: "png"
@@ -10,8 +12,8 @@ defmodule Aelia.DeviantArt.HTTP do
   def token_auth() do
     params = %{
       grant_type: "client_credentials",
-      client_id: System.get_env("CLIENT_ID"),
-      client_secret: System.get_env("CLIENT_SECRET")
+      client_id: @client_id,
+      client_secret: @client_secret
     }
 
     case fetch(@auth_url, params) do

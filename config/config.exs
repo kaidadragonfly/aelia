@@ -26,8 +26,10 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-config :aelia, :deviantart_base_url, "https://www.deviantart.com/api/v1/oauth2"
-config :aelia, :deviantart_auth_url, "https://www.deviantart.com/oauth2/token"
+config :aelia, :da_base_url, "https://www.deviantart.com/api/v1/oauth2"
+config :aelia, :da_auth_url, "https://www.deviantart.com/oauth2/token"
+config :aelia, :da_client_id, System.get_env("CLIENT_ID")
+config :aelia, :da_client_secret, System.get_env("CLIENT_SECRET")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
