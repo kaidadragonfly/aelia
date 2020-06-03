@@ -45,7 +45,6 @@ defmodule Aelia.MixProject do
       {:ecto_sql, "~> 3.4"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.11"},
-      {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_dashboard, "~> 0.2.0"},
       {:telemetry_metrics, "~> 0.4"},
       {:telemetry_poller, "~> 0.4"},
@@ -53,7 +52,9 @@ defmodule Aelia.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:httpoison, "~> 1.6"},
-      {:excoveralls, "~> 0.10", only: :test},
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
+      {:excoveralls, "~> 0.13", only: :test},
+      {:stream_data, "~> 0.5.0", only: :test}
     ]
   end
 

@@ -4,6 +4,7 @@ defmodule AeliaWeb.ArtistController do
   alias Aelia.DeviantArt
 
   def index(conn, _params) do
+    # TODO: Display artists viewed by current user.
     redirect(conn, to: Routes.page_path(conn, :index))
   end
 

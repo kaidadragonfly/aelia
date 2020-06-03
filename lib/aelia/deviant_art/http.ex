@@ -27,7 +27,7 @@ defmodule Aelia.DeviantArt.HTTP do
   def fetch(url, params) do
     case get(url, params) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
-        {_, type} = Enum.find(headers, fn {name, _} -> name == "Content-Type" end)
+        {_, type} = Enum.find(headers, fn {name, _} -> String.downcase(name) == "content-type" end)
         if String.starts_with?(type, "application/json") do
           {:ok, Jason.decode!(body)}
         else

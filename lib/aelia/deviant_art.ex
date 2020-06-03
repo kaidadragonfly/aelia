@@ -90,7 +90,7 @@ defmodule Aelia.DeviantArt do
     {:ok, folders} = HTTP.fetch_results(url, params)
 
     %{"folderid" => featured_id} =
-      Enum.find(folders, fn f -> Map.get(f, "name") == "Featured" end)
+      Enum.find(folders, &(Map.get(&1, "name") == "Featured"))
 
     folders
     |> Enum.with_index
