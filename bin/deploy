@@ -5,7 +5,10 @@ ROOT_DIR="$BIN_DIR/.."
 cd "$ROOT_DIR" || exit 1
 
 source .env
+export MIX_ENV=prod 
+
 mix deps.get --only prod
-MIX_ENV=prod mix compile
+mix compile
 npm run deploy --prefix ./assets
 mix phx.digest
+mix ecto.migrate
