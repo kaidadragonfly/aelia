@@ -22,7 +22,5 @@ config :aelia, AeliaWeb.Endpoint,
 config :logger, level: :warn
 
 # Use a mock server in place of deviant_art
-config :aelia, :da_base_url, "http://localhost:54200"
-config :aelia, :da_auth_url, "http://localhost:54200/auth"
 config :aelia, :da_client_id, "TEST_DEVIANTART_CLIENT_ID"
 config :aelia, :da_client_secret, "TEST_DEVIANTART_CLIENT_SECRET"

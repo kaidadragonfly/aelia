@@ -1,7 +1,7 @@
 defmodule Aelia.DeviantArt.HTTP do
   require Logger
 
-  @auth_url Application.fetch_env!(:aelia, :da_auth_url)
+  def auth_url(), do: Application.fetch_env!(:aelia, :da_auth_url)
   @client_id Application.fetch_env!(:aelia, :da_client_id)
   @client_secret Application.fetch_env!(:aelia, :da_client_secret)
 
@@ -16,7 +16,7 @@ defmodule Aelia.DeviantArt.HTTP do
       client_secret: @client_secret
     }
 
-    case fetch(@auth_url, params) do
+    case fetch(auth_url(), params) do
       {:ok, %{"status" => "success", "access_token" => token}} ->
         {:ok, token}
       error ->

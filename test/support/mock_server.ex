@@ -31,7 +31,7 @@ defmodule Aelia.MockServer do
         "mature_content" => "true",
         "username" => username
       } ->
-        if String.starts_with? username, "valid" do
+        if String.starts_with? username, "featured" do
           id = :crypto.hash(:sha, username) |> Base.encode16()
           icon_url = "/view/user/icons/#{username}"
           profile_url = "/view/user/profile/#{username}"
@@ -46,7 +46,6 @@ defmodule Aelia.MockServer do
     end
   end
 
-  # GET /gallery/folders?access_token=TEST_DEVIANTART_TOKEN&mature_content=true&offset=0&username=valid-new
   get "/gallery/folders" do
     case conn.params do
       %{
@@ -55,7 +54,7 @@ defmodule Aelia.MockServer do
         "username" => username,
         "offset" => "0"
       } ->
-        if String.starts_with? username, "valid" do
+        if String.starts_with? username, "featured" do
           id = :crypto.hash(:sha, "#{username}folder") |> Base.encode16()
 
           json(conn, %{

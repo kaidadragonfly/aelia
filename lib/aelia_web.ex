@@ -71,10 +71,14 @@ defmodule AeliaWeb do
     end
   end
 
+
   @doc """
   When used, dispatch to the appropriate controller/view/etc.
   """
   defmacro __using__(which) when is_atom(which) do
+    # Coveralls doesn't know about Macros I guess?
+    # coveralls-ignore-start
     apply(__MODULE__, which, [])
+    # coveralls-ignore-end
   end
 end

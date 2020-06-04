@@ -5,7 +5,7 @@ defmodule Aelia.DeviantArt do
 
   import Ecto.Query, only: [from: 2]
 
-  @base_url Application.fetch_env!(:aelia, :da_base_url)
+  def base_url, do: Application.fetch_env!(:aelia, :da_base_url)
 
   def artist_info(username) do
     case Repo.get_by(Artist, username: username) do
@@ -32,7 +32,7 @@ defmodule Aelia.DeviantArt do
   defp refresh_artist_info(username) do
     {:ok, token} = HTTP.token_auth()
 
-    url = "#{@base_url}/user/profile/#{username}"
+    url = "#{base_url()}/user/profile/#{username}"
     params = %{
       username: username,
       access_token: token,
@@ -80,7 +80,7 @@ defmodule Aelia.DeviantArt do
   end
 
   defp refresh_folders(token, artist_id, username) do
-    url = "#{@base_url}/gallery/folders"
+    url = "#{base_url()}/gallery/folders"
     params = %{
       username: username,
       access_token: token,
@@ -129,7 +129,7 @@ defmodule Aelia.DeviantArt do
   ) do
     {:ok, token} = HTTP.token_auth()
 
-    url = "#{@base_url}/gallery/#{id}"
+    url = "#{base_url()}/gallery/#{id}"
     params = %{
       mode: "newest",
       username: username,
