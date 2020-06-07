@@ -14,11 +14,4 @@ defmodule Aelia.DeviantArt.Artist do
 
     timestamps()
   end
-
-  @doc false
-  def changeset(artist, attrs) do
-    artist
-    |> cast(attrs, [:username, :id, :profile_url, :name, :icon_url])
-    |> validate_required([:username, :id, :profile_url])
-  end
 end

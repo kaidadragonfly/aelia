@@ -17,11 +17,4 @@ defmodule Aelia.DeviantArt.Folder do
 
     timestamps()
   end
-
-  @doc false
-  def changeset(folder, attrs) do
-    folder
-    |> cast(attrs, [:id, :name])
-    |> validate_required([:id, :name])
-  end
 end
