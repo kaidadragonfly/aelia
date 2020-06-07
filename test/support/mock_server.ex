@@ -21,6 +21,8 @@ defmodule Aelia.MockServer do
         "client_secret" => @client_secret
       } ->
         json(conn, %{"status" => "success", "access_token" => @test_token})
+      _ ->
+        json(conn, 400, %{"status" => "bad request"})
     end
   end
 
@@ -31,17 +33,17 @@ defmodule Aelia.MockServer do
         "mature_content" => "true",
         "username" => username
       } ->
-        if String.starts_with? username, "featured" do
-          id = :crypto.hash(:sha, username) |> Base.encode16()
+        if username |> String.starts_with?("missing:") do
+          Plug.Conn.send_resp(conn, 404, "not found")
+        else
+          user_id = id(username)
           icon_url = "/view/user/icons/#{username}"
           profile_url = "/view/user/profile/#{username}"
 
           json(conn, %{
-                "user" => %{"usericon" => icon_url, "userid" => id},
+                "user" => %{"usericon" => icon_url, "userid" => user_id},
                 "profile_url" => profile_url,
                 "real_name" => String.capitalize(username)})
-        else
-          Plug.Conn.send_resp(conn, 404, "not found")
         end
     end
   end
@@ -54,19 +56,56 @@ defmodule Aelia.MockServer do
         "username" => username,
         "offset" => "0"
       } ->
-        if String.starts_with? username, "featured" do
-          id = :crypto.hash(:sha, "#{username}folder") |> Base.encode16()
+        featured_id = id("#{username}featured")
+        featured = %{"folderid" => featured_id,
+                     "name" => "Featured",
+                     "parent" => nil}
 
-          json(conn, %{
-                "has_more" => false,
-                "next_offset" => "null",
-                "results" => [%{"folderid" => id,
-                                "name" => "Featured",
-                                "parent" => nil}]})
-        else
-          Plug.Conn.send_resp(conn, 404, "not found")
+        case username do
+          "featured" ->
+            json(conn, %{
+                  "has_more" => false,
+                  "next_offset" => "null",
+                  "results" => [featured]})
+
+          "featured-multi" ->
+            folders = [featured] ++ Enum.map(1..3,
+            fn index ->
+              %{"folderid" => id("#{username}#{index}"),
+                "name" => "Folder #{index}",
+                "parent" => featured_id} end)
+
+            json(conn, %{
+                  "has_more" => false,
+                  "next_offset" => "null",
+                  "results" => folders})
+
+          "multi" ->
+            parent_id = id("#{username}parent")
+            parent = %{"folderid" => parent_id,
+                       "name" => "Parent",
+                       "parent" => featured_id}
+            single = %{"folderid" => id("#{username}single"),
+                       "name" => "Single",
+                       "parent" => featured_id}
+            folders = [featured, parent, single] ++ Enum.map(1..3,
+              fn index ->
+                %{"folderid" => id("#{username}#{index}"),
+                  "name" => "Folder #{index}",
+                  "parent" => parent_id} end)
+
+            json(conn, %{
+                  "has_more" => false,
+                  "next_offset" => "null",
+                  "results" => folders})
+          true ->
+            Plug.Conn.send_resp(conn, 404, "not found")
         end
     end
+  end
+
+  defp id(string) do
+    :crypto.hash(:sha, string) |> Base.encode16()
   end
 
   defp json(conn, status \\ 200, body = %{}) do

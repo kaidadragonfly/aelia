@@ -3,7 +3,7 @@ defmodule AeliaWeb.ArtistControllerTest do
   use ExUnitProperties
 
   alias Aelia.Repo
-  alias Aelia.DeviantArt.{Artist, Folder}
+  alias Aelia.DeviantArt.{Artist, Folder, Work}
 
   # def fixture(:artist) do
   #   {:ok, artist} = DeviantArt.create_artist(@create_attrs)
@@ -36,31 +36,111 @@ defmodule AeliaWeb.ArtistControllerTest do
   end
 
   describe "show" do
-    test "creates an artist with only featured folder", %{conn: conn} do
-      check all suffix <- StreamData.string(:alphanumeric, min_length: 6) do
-        Repo.delete_all(Artist)
+    test "handles an artist with only featured folder", %{conn: conn} do
+      Repo.delete_all(Artist)
 
-        username = "featured-#{suffix}"
-        conn = get(conn, Routes.artist_path(conn, :show, username))
+      username = "featured"
+      conn = get(conn, Routes.artist_path(conn, :show, username))
 
-        assert html_response(conn, 200) =~ username
+      assert html_response(conn, 200) =~ username
 
-        artists = Repo.all(Artist)
+      artists = Repo.all(Artist)
 
-        assert length(artists) == 1
-        assert [artist] = artists
-        assert artist.username == username
+      assert length(artists) == 1
+      assert [artist] = artists
+      assert artist.username == username
 
-        folders = Repo.all(Folder)
+      folders = Repo.all(Folder)
 
-        assert length(folders) == 1
-        assert [folder] = folders
-        assert folder.name == "Featured"
-        assert Repo.preload(folder, :parent).parent == nil
-      end
+      assert length(folders) == 1
+      assert [folder] = folders
+      assert folder.name == "Featured"
+      assert Repo.preload(folder, :parent).parent == nil
+
+      # Works should be lazy loaded.
+      assert length(Repo.all(Work)) == 0
     end
 
-    test "returns info for an artist that already exists" do
+    test "\"Featured\" is not considered a parent", %{conn: conn} do
+      username = "featured-multi"
+      conn = get(conn, Routes.artist_path(conn, :show, username))
+
+      assert html_response(conn, 200) =~ username
+
+      artists = Repo.all(Artist)
+
+      assert length(artists) == 1
+      assert [artist] = artists
+      assert artist.username == username
+
+      folders = Repo.all(Folder)
+      |> Enum.map(&(Repo.preload(&1, [:parent, :children])))
+      assert length(folders) == 4
+
+      assert [featured] = folders |> Enum.filter(&(&1.name == "Featured"))
+      assert featured.name == "Featured"
+      assert featured.parent == nil
+
+      folders = folders |> Enum.reject(&(&1.name == "Featured"))
+
+      assert length(folders) == 3
+      folders |> Enum.each(fn folder ->
+        assert folder.parent == nil
+        assert length(folder.children) == 0
+      end)
+
+      # Works should be lazy loaded.
+      assert length(Repo.all(Work)) == 0
+    end
+
+    test "handles nested folders properly", %{conn: conn} do
+      username = "multi"
+      conn = get(conn, Routes.artist_path(conn, :show, username))
+
+      assert html_response(conn, 200) =~ username
+
+      artists = Repo.all(Artist)
+
+      assert length(artists) == 1
+      assert [artist] = artists
+      assert artist.username == username
+
+      folders = Repo.all(Folder)
+      |> Enum.map(&(Repo.preload(&1, [:parent, :children])))
+
+      assert length(folders) == 6
+
+      assert [featured] = folders |> Enum.filter(&(&1.name == "Featured"))
+      assert featured.name == "Featured"
+      assert featured.parent == nil
+
+      folders = folders |> Enum.reject(&(&1.name == "Featured"))
+      assert length(folders) == 5
+
+      assert [parent] = folders |> Enum.filter(&(&1.name == "Parent"))
+      assert length(parent.children) == 3
+      assert parent.parent_id == nil
+
+      folders = folders |> Enum.reject(&(&1.name == "Parent"))
+      assert length(folders) == 4
+
+      assert [single] = folders |> Enum.filter(&(&1.name == "Single"))
+      assert length(single.children) == 0
+      assert single.parent_id == nil
+
+      folders = folders |> Enum.reject(&(&1.name == "Single"))
+      assert length(folders) == 3
+
+      folders |> Enum.each(fn folder ->
+        assert folder.parent_id == parent.id
+        assert length(folder.children) == 0
+      end)
+
+      # Works should be lazy loaded.
+      assert length(Repo.all(Work)) == 0
+    end
+
+    test "handles an artist that already exists" do
     end
 
     test "returns 404 for an artist that doesn't exist" do
