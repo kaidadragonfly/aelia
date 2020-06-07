@@ -12,7 +12,7 @@ defmodule Aelia.DeviantArt.Folder do
     field :parent_id, :string
     field :index, :integer
     has_many :works, Work
-    belongs_to :parent, Folder, foreign_key: :id, references: :parent_id, define_field: false
+    belongs_to :parent, Folder, foreign_key: :parent_id, references: :id, define_field: false
     has_many :children, Folder, foreign_key: :parent_id, references: :id
 
     timestamps()

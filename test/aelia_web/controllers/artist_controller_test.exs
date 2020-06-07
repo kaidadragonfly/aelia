@@ -119,14 +119,14 @@ defmodule AeliaWeb.ArtistControllerTest do
 
       assert [parent] = folders |> Enum.filter(&(&1.name == "Parent"))
       assert length(parent.children) == 3
-      assert parent.parent_id == nil
+      assert parent.parent == nil
 
       folders = folders |> Enum.reject(&(&1.name == "Parent"))
       assert length(folders) == 4
 
       assert [single] = folders |> Enum.filter(&(&1.name == "Single"))
       assert length(single.children) == 0
-      assert single.parent_id == nil
+      assert single.parent == nil
 
       folders = folders |> Enum.reject(&(&1.name == "Single"))
       assert length(folders) == 3
