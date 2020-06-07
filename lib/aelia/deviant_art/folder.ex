@@ -1,6 +1,5 @@
 defmodule Aelia.DeviantArt.Folder do
   use Ecto.Schema
-  import Ecto.Changeset
 
   alias Aelia.DeviantArt.{Artist, Folder, Work}
 
