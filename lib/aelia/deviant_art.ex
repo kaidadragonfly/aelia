@@ -47,24 +47,29 @@ defmodule Aelia.DeviantArt do
          "user" => %{"usericon" => icon_url, "userid" => id},
          "profile_url" => profile_url,
          "real_name" => name}} ->
-        Repo.transaction(fn ->
-          {:ok, artist} =
-            Repo.insert(
-              %Artist{
-                id: id,
-                name: name,
-                username: username,
-                profile_url: profile_url,
-                icon_url: icon_url
-              },
-              on_conflict: :replace_all,
-              conflict_target: :username
-            )
+        case Repo.transaction(fn ->
+              {:ok, artist} =
+                Repo.insert(
+                  %Artist{
+                    id: id,
+                    name: name,
+                    username: username,
+                    profile_url: profile_url,
+                    icon_url: icon_url
+                  },
+                  on_conflict: :replace_all,
+                  conflict_target: :username
+                )
 
-          refresh_folders(token, id, username)
-
-          preload_folders(artist)
-        end)
+              # TODO: Refactor this mess.
+              case refresh_folders(token, id, username) do
+                {:ok, _} -> {:ok, preload_folders(artist)}
+                error -> error
+              end
+            end) do
+          {:ok, inner} -> inner
+          error -> error
+        end
       {:error, message} ->
         case Regex.named_captures(~r/Bad Request: (?<json>.*)/, message) do
           %{"json" => json} ->
@@ -87,31 +92,37 @@ defmodule Aelia.DeviantArt do
       mature_content: true
     }
 
-    {:ok, folders} = HTTP.fetch_results(url, params)
+    case HTTP.fetch_results(url, params) do
+      {:ok, folders} ->
+        %{"folderid" => featured_id} =
+          Enum.find(folders, &(Map.get(&1, "name") == "Featured"))
 
-    %{"folderid" => featured_id} =
-      Enum.find(folders, &(Map.get(&1, "name") == "Featured"))
+        folders
+        |> Enum.with_index
+        |> Enum.each(
+        fn {%{"folderid" => id,
+              "name" => name,
+               "parent" => parent_id}, index} ->
+            parent_id =
+          if parent_id == featured_id do
+            nil
+          else
+            parent_id
+          end
 
-    folders
-    |> Enum.with_index
-    |> Enum.each(
-    fn {%{"folderid" => id, "name" => name, "parent" => parent_id}, index} ->
-      parent_id =
-      if parent_id == featured_id do
-        nil
-      else
-        parent_id
-      end
+          Repo.insert(
+            %Folder{id: id,
+                    name: name,
+                    artist_id: artist_id,
+                    parent_id: parent_id,
+                    index: index},
+            on_conflict: :replace_all,
+            conflict_target: :id)
+        end)
 
-      Repo.insert(
-        %Folder{id: id,
-                name: name,
-                artist_id: artist_id,
-                parent_id: parent_id,
-                index: index},
-        on_conflict: :replace_all,
-        conflict_target: :id)
-    end)
+        {:ok, folders}
+      error -> error
+    end
   end
 
   defp get_folder(id) do

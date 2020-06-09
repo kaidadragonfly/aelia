@@ -98,8 +98,8 @@ defmodule Aelia.MockServer do
                   "has_more" => false,
                   "next_offset" => "null",
                   "results" => folders})
-          true ->
-            Plug.Conn.send_resp(conn, 404, "not found")
+          username ->
+            Plug.Conn.send_resp(conn, 404, "#{username} not found")
         end
     end
   end

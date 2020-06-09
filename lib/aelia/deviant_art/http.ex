@@ -57,8 +57,7 @@ defmodule Aelia.DeviantArt.HTTP do
         end
       {:ok, %{"has_more" => false, "results" => results}} ->
         {:ok, results}
-      error ->
-        {:error, error}
+      error -> error
     end
   end
 

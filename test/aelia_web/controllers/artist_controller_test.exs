@@ -5,11 +5,6 @@ defmodule AeliaWeb.ArtistControllerTest do
   alias Aelia.Repo
   alias Aelia.DeviantArt.{Artist, Folder, Work}
 
-  # def fixture(:artist) do
-  #   {:ok, artist} = DeviantArt.create_artist(@create_attrs)
-  #   artist
-  # end
-
   setup_all do
     Application.put_env(:aelia, :da_base_url, "http://localhost:54200")
     Application.put_env(:aelia, :da_auth_url, "http://localhost:54200/auth")
@@ -37,8 +32,6 @@ defmodule AeliaWeb.ArtistControllerTest do
 
   describe "show" do
     test "handles an artist with only featured folder", %{conn: conn} do
-      Repo.delete_all(Artist)
-
       username = "featured"
       conn = get(conn, Routes.artist_path(conn, :show, username))
 
@@ -140,10 +133,27 @@ defmodule AeliaWeb.ArtistControllerTest do
       assert length(Repo.all(Work)) == 0
     end
 
-    test "handles an artist that already exists" do
+    test "handles an artist that already exists", %{conn: conn} do
+      username = "existing"
+      Repo.insert!(
+        %Artist{
+          id: "existingid",
+          username: username,
+          profile_url: "http://localhost:44200/profile/#{username}"})
+
+      conn = get(conn, Routes.artist_path(conn, :show, username))
+
+      assert html_response(conn, 200) =~ username
+
+      # TODO: Add functionality to update the artist from upstream.
     end
 
-    test "returns 404 for an artist that doesn't exist" do
+    test "returns 404 for an artist that doesn't exist", %{conn: conn} do
+      username = "missing"
+      conn = get(conn, Routes.artist_path(conn, :show, username))
+
+      assert html_response(conn, 302)
+      assert get_flash(conn, :info) =~ username
     end
   end
 end
