@@ -27,13 +27,14 @@ defmodule Aelia.DeviantArt.Work do
   def get!(%{username: username, folder_index: folder_index, index: index}) do
     Repo.one!(
       from w in Work,
-      where: w.index == ^index,
-      join: f in Folder,
-      on: w.folder_id == f.id,
-      where: f.index == ^folder_index,
-      join: a in Artist,
-      on: f.artist_id == a.id,
-      where: a.username == ^username,
-      select_merge: %{username: ^username, folder_index: ^folder_index})
+        where: w.index == ^index,
+        join: f in Folder,
+        on: w.folder_id == f.id,
+        where: f.index == ^folder_index,
+        join: a in Artist,
+        on: f.artist_id == a.id,
+        where: a.username == ^username,
+        select_merge: %{username: ^username, folder_index: ^folder_index}
+    )
   end
 end

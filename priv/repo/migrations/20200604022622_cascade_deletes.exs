@@ -4,14 +4,14 @@ defmodule Aelia.Repo.Migrations.CascadeDeletes do
   def change do
     alter table("folders") do
       modify :artist_id,
-        references("artists", type: :string, on_delete: :delete_all),
-        from: references("artists")
+             references("artists", type: :string, on_delete: :delete_all),
+             from: references("artists")
     end
 
     alter table("works") do
       modify :folder_id,
-        references("folders", type: :string, on_delete: :delete_all),
-        from: references("folders")
+             references("folders", type: :string, on_delete: :delete_all),
+             from: references("folders")
     end
   end
 end

@@ -19,6 +19,7 @@ defmodule Aelia.DeviantArt.HTTP do
     case fetch(auth_url(), params) do
       {:ok, %{"status" => "success", "access_token" => token}} ->
         {:ok, token}
+
       error ->
         error
     end
@@ -27,16 +28,21 @@ defmodule Aelia.DeviantArt.HTTP do
   def fetch(url, params) do
     case get(url, params) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body, headers: headers}} ->
-        {_, type} = Enum.find(headers, fn {name, _} -> String.downcase(name) == "content-type" end)
+        {_, type} =
+          Enum.find(headers, fn {name, _} -> String.downcase(name) == "content-type" end)
+
         if String.starts_with?(type, "application/json") do
           {:ok, Jason.decode!(body)}
         else
           {:ok, body}
         end
+
       {:ok, %HTTPoison.Response{status_code: 400, body: body}} ->
         {:error, "Bad Request: #{body}"}
+
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
         {:error, "Unexpected error.  status: #{status} body: #{body}"}
+
       {:error, %HTTPoison.Error{} = reason} ->
         {:error, "Error: #{HTTPoison.Error.message(reason)}"}
     end
@@ -46,18 +52,22 @@ defmodule Aelia.DeviantArt.HTTP do
     params = Map.put(params, :offset, offset)
 
     case fetch(url, params) do
-      {:ok, %{
-          "has_more" => true,
-          "next_offset" => next_offset,
-          "results" => results
+      {:ok,
+       %{
+         "has_more" => true,
+         "next_offset" => next_offset,
+         "results" => results
        }} ->
         case fetch_results(url, params, next_offset) do
           {:ok, next_results} -> {:ok, results ++ next_results}
           error -> error
         end
+
       {:ok, %{"has_more" => false, "results" => results}} ->
         {:ok, results}
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -65,16 +75,20 @@ defmodule Aelia.DeviantArt.HTTP do
     Logger.info("Requesting url: #{url}")
 
     case HTTPoison.get(
-          url,
-          [],
-          params: params,
-          ssl: [{:versions, [:"tlsv1.3", :"tlsv1.2"]}]) do
+           url,
+           [],
+           params: params,
+           ssl: [{:versions, [:"tlsv1.3", :"tlsv1.2"]}]
+         ) do
       {:ok, %HTTPoison.Response{status_code: 429}} ->
         Process.sleep(sleep)
         get(url, params, 2 * sleep)
+
       {:ok, resp = %HTTPoison.Response{status_code: 200}} ->
         {:ok, resp}
-      resp -> resp
+
+      resp ->
+        resp
     end
   end
 end

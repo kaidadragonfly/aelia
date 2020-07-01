@@ -19,10 +19,7 @@ defmodule AeliaWeb.ArtistController do
         conn
         |> put_flash(:info, "Artist saved successfully.")
         |> render("show.html", artist: artist)
-      {:error, %Ecto.Changeset{}} ->
-        conn
-        |> put_flash(:info, "Failed save artist #{username}!")
-        |> redirect(to: Routes.page_path(conn, :index))
+
       {:error, message} ->
         conn
         |> put_flash(:info, message)

@@ -8,6 +8,5 @@ defmodule Aelia.Repo.Migrations.CreateFolders do
 
       timestamps()
     end
-
   end
 end

@@ -12,6 +12,5 @@ defmodule Aelia.Repo.Migrations.CreateWorks do
 
       timestamps()
     end
-
   end
 end

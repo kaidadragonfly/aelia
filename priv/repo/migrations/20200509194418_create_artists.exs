@@ -8,6 +8,5 @@ defmodule Aelia.Repo.Migrations.CreateArtists do
 
       timestamps()
     end
-
   end
 end

@@ -14,12 +14,12 @@ defmodule Aelia.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Aelia.PubSub},
       # Start the Endpoint (http/https)
-      AeliaWeb.Endpoint,
+      AeliaWeb.Endpoint
       # Start a worker by calling: Aelia.Worker.start_link(arg)
       # {Aelia.Worker, arg}
     ]
 
-    HTTPoison.start
+    HTTPoison.start()
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -34,5 +34,6 @@ defmodule Aelia.Application do
     AeliaWeb.Endpoint.config_change(changed, removed)
     :ok
   end
+
   # coveralls-ignore-end
 end

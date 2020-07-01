@@ -11,7 +11,8 @@ defmodule AeliaWeb.WorkController do
       conn,
       {:binary, work.file},
       disposition: :inline,
-      filename: "#{id}.#{ext}")
+      filename: "#{id}.#{ext}"
+    )
   end
 
   def thumb(conn, %{"id" => id, "ext" => ext}) do
@@ -21,17 +22,20 @@ defmodule AeliaWeb.WorkController do
       conn,
       {:binary, work.thumb},
       disposition: :inline,
-      filename: "#{id}-thumb.#{ext}")
+      filename: "#{id}-thumb.#{ext}"
+    )
   end
 
   def show(
-    conn,
-    %{
-      "artist_username" => username,
-      "folder_index" => folder_index,
-      "index" => index
-    }) do
-    render(conn, "show.html", work: Work.get!(
-          %{username: username, folder_index: folder_index, index: index}))
+        conn,
+        %{
+          "artist_username" => username,
+          "folder_index" => folder_index,
+          "index" => index
+        }
+      ) do
+    render(conn, "show.html",
+      work: Work.get!(%{username: username, folder_index: folder_index, index: index})
+    )
   end
 end
