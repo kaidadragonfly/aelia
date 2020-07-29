@@ -1,13 +1,14 @@
 defmodule Aelia.MockServer do
   use Plug.Router
 
-  plug Plug.Parsers,
+  plug(Plug.Parsers,
     parsers: [:json],
     pass: ["application/json"],
     json_decoder: Jason
+  )
 
-  plug :match
-  plug :dispatch
+  plug(:match)
+  plug(:dispatch)
 
   @test_token "TEST_DEVIANTART_TOKEN"
   @client_id Application.fetch_env!(:aelia, :da_client_id)
@@ -137,13 +138,13 @@ defmodule Aelia.MockServer do
         })
 
       %{
-        "folder_id" => folder_id = "multiple-folder-id"
+        "folder_id" => folder_id = "work-folder-id"
       } ->
         json(conn, %{
           "folderid" => folder_id,
           "has_more" => false,
           "next_offset" => "null",
-          "results" => []
+          "results" => [%{file_url: "first-work-file-url"}, %{file_url: "second-work-file-url"}]
         })
     end
   end
