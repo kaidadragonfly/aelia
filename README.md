@@ -7,12 +7,16 @@ To start your Phoenix server:
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+## Dependencies
 
-## Learn more
+### Packages
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+Install the following with your package manager:
+
+* `elixir` (v1.6 or newer, tested on v1.9 and v1.10)
+* `npm`
+
+### NPM Dependencies
+
+* terser: `npm install -g terser`
+* clean-css-cli: `npm install -g clean-css-cli`
