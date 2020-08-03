@@ -8,7 +8,15 @@ source .env
 export MIX_ENV=prod 
 
 mix deps.get --only prod
+mkdir -p priv/static/js
+mkdir -p priv/static/css
+terser deps/phoenix/priv/static/phoenix.js deps/phoenix_html/priv/static/phoenix_html.js assets/js/app.js --source-map --output priv/static/js/app.js
+cleancss assets/css/app.css --source-map --output priv/static/css/app.css
+
 mix compile
 npm run deploy --prefix ./assets
 mix phx.digest
 mix ecto.migrate
+
+# TODO: add tests.
+# TODO: add updating dependencies and re-testing.

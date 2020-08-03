@@ -21,7 +21,28 @@ config :aelia, AeliaWeb.Endpoint,
   code_reloader: true,
   check_origin: false,
   watchers: [
-    "#{Path.expand("../bin/build-assets", __DIR__)}": []
+    mkdir: [
+      "-p",
+      Path.expand("../priv/static/js", __DIR__)
+    ],
+    mkdir: [
+      "-p",
+      Path.expand("../priv/static/css", __DIR__)
+    ],
+    terser: [
+      Path.expand("../deps/phoenix/priv/static/phoenix.js", __DIR__),
+      Path.expand("../deps/phoenix_html/priv/static/phoenix_html.js", __DIR__),
+      Path.expand("../assets/js/app.js", __DIR__),
+      "--source-map",
+      "--output",
+      Path.expand("../priv/static/js/app.js", __DIR__)
+    ],
+    cleancss: [
+      Path.expand("../assets/css/app.css", __DIR__),
+      "--source-map",
+      "--output",
+      Path.expand("../priv/static/css/app.css", __DIR__)
+    ]
   ]
 
 # ## SSL Support
